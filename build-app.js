@@ -26,9 +26,9 @@ for (const [fam, ws] of [['commissioner', [400, 500, 600, 700]], ['literata', [6
 fs.writeFileSync(path.join(out, 'lib/fonts.css'), css);
 let html = fs.readFileSync(SRC, 'utf8');
 html = html.replace(/<link rel="preconnect"[^>]*>\n?/, '').replace(/<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^>]*>\n?/, '')
-  .replace('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', 'lib/xlsx.full.min.js')
-  .replace('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', 'lib/jspdf.umd.min.js')
-  .replace('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js', 'lib/jspdf.plugin.autotable.min.js')
+  .replace(/https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/xlsx\/[\d.]+\/xlsx\.full\.min\.js/, 'lib/xlsx.full.min.js')
+  .replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/jspdf@[\d.]+\/dist\/jspdf\.umd\.min\.js/, 'lib/jspdf.umd.min.js')
+  .replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/jspdf-autotable@[\d.]+\/dist\/jspdf\.plugin\.autotable\.min\.js/, 'lib/jspdf.plugin.autotable.min.js')
   .replace(/<meta name="claude:viewport-fit-sides"[^>]*>\n?/, '');
 if (/https:\/\/(cdn|fonts)/.test(html.replace(/https:\/\/(www\.google\.com|earth\.google\.com)/g, ''))) throw new Error('external resource left in page');
 const head = `<!doctype html><html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
