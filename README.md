@@ -24,4 +24,4 @@ npm start          # δοκιμή
 npm run dist       # Windows installer στο dist/
 ```
 
-Νέα έκδοση: αλλάξτε το `version` στο `package.json`, τρέξτε `npm run dist` και ανεβάστε στο GitHub Release `vX.Y.Z` τα `Agrologio-Setup-X.Y.Z.exe`, `.exe.blockmap` και `latest.yml`.
+Νέα έκδοση: αλλάξτε το `version` στο `package.json` και σπρώξτε tag `vX.Y.Z`. Το GitHub Actions (`.github/workflows/release.yml`) χτίζει το installer και το ανεβάζει στα Releases μαζί με το `latest.yml`, από όπου το βρίσκουν τα εγκατεστημένα προγράμματα.
