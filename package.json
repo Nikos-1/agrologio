@@ -1,0 +1,68 @@
+{
+  "name": "agrologio",
+  "productName": "Αγρολόγιο",
+  "version": "0.2.0",
+  "description": "Κόστος και έσοδα αγροτικών εργασιών ανά αγροτεμάχιο",
+  "author": "Nick",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build-app": "node build-app.js",
+    "dist": "node build-app.js && electron-builder --win nsis --x64 --publish never"
+  },
+  "build": {
+    "appId": "gr.agrologio.app",
+    "productName": "Agrologio",
+    "artifactName": "Agrologio-Setup-${version}.exe",
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*",
+      "package.json"
+    ],
+    "afterPack": "./after-pack.js",
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false,
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Αγρολόγιο",
+      "uninstallDisplayName": "Αγρολόγιο",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "language": "1032"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Nikos-1",
+        "repo": "agrologio",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9",
+    "sql.js": "1.11.0"
+  },
+  "devDependencies": {
+    "@fontsource/commissioner": "5.1.0",
+    "@fontsource/literata": "5.1.0",
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8",
+    "jspdf": "2.5.1",
+    "jspdf-autotable": "3.8.2",
+    "resedit": "2.0.3",
+    "xlsx": "0.18.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nikos-1/agrologio.git"
+  }
+}
