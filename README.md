@@ -24,4 +24,4 @@ npm start          # δοκιμή
 npm run dist       # Windows installer στο dist/
 ```
 
-Νέα έκδοση: αλλάξτε το `version` στο `package.json` και σπρώξτε tag `vX.Y.Z`. Το GitHub Actions (`.github/workflows/release.yml`) χτίζει το installer και το ανεβάζει στα Releases μαζί με το `latest.yml`, από όπου το βρίσκουν τα εγκατεστημένα προγράμματα.
+Νέα έκδοση: αλλάξτε το `version` στο `package.json`, σπρώξτε στο `main` και πατήστε **Run workflow** στο [Actions → release](https://github.com/Nikos-1/agrologio/actions/workflows/release.yml) (ή σπρώξτε tag `vX.Y.Z`). Το GitHub Actions χτίζει το installer και το ανεβάζει στα Releases μαζί με το `latest.yml`, από όπου το βρίσκουν τα εγκατεστημένα προγράμματα.
