@@ -138,6 +138,7 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
 .home-tiles{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 @media (prefers-reduced-motion:no-preference){.card,.item{transition:background .15s}}
 #millPart input[readonly]{background:transparent;border-style:dashed;font-weight:600}
+.datebox{position:relative;display:flex}.datebox #eDateTxt{flex:1;min-width:0;padding-right:42px}#eDateBtn{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:none;box-shadow:none;padding:6px;min-height:0;color:var(--muted,inherit);cursor:pointer}#eDatePick{position:absolute;right:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
 </style>
 
 <header class="top">
@@ -177,7 +178,7 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
       <form id="entryForm" autocomplete="off">
         <div class="fields">
           <label class="f">Αγροτεμάχιο<select id="eField" required></select></label>
-          <label class="f">Ημερομηνία<input id="eDate" type="date" required></label>
+          <label class="f">Ημερομηνία<span class="datebox"><input id="eDateTxt" type="text" inputmode="numeric" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" maxlength="10" autocomplete="off" required><button type="button" id="eDateBtn" aria-label="Άνοιγμα ημερολογίου"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button><input id="eDatePick" type="date" tabindex="-1" aria-hidden="true"></span><input id="eDate" type="hidden"></label>
           <label class="f" id="eSeasonWrap">Χρονιά (συγκομιδή)<select id="eSeason"></select></label>
           <label class="f" id="eScopeWrap" hidden>Κατανομή σε<select id="eScope"><option value="all">Όλα τα αγροτεμάχια</option><option value="olive">Μόνο ελιές</option><option value="vine">Μόνο αμπέλια</option></select></label>
         </div>
@@ -763,6 +764,7 @@ async function deleteEntry(e){const b=e.target;if(!editing)return;if(!b.dataset.
 function logFor(fid){$('#logField').value=fid;renderLog();go('log')}
 
 /* ---------- exports ---------- */
+const xDate=d=>{if(!d)return '';const [y,m,dd]=d.split('-').map(Number);return new Date(y,m-1,dd)};
 async function exportXlsx(){if(typeof XLSX==='undefined'){toast('Η βιβλιοθήκη Excel δεν φόρτωσε');return}
   const wb=XLSX.utils.book_new();const fname=id=>id===FARM?'Όλο το κτήμα (κατανομή ανά στρέμμα)':S.fields.get(id)?.name||'';
   const rep=stats().sort((a,b)=>b.season-a.season).map(s=>{const f=S.fields.get(s.fieldId);const r={'Χρονιά (συγκομιδή)':s.season,'Αγροτεμάχιο':f.name,'Καλλιέργεια':CROPS[f.crop].name,'Στρέμματα':num(f.stremmata),'Δέντρα / κλήματα':num(f.plants),'Κατάσταση':s.closed?'Ολοκληρώθηκε':'Σε εξέλιξη',
@@ -770,10 +772,10 @@ async function exportXlsx(){if(typeof XLSX==='undefined'){toast('Η βιβλιο
     'Κέρδος / στρέμμα (€)':s.perStr!=null?round2(s.perStr):'','Κέρδος / δέντρο ή κλήμα (€)':s.perPlant!=null?round2(s.perPlant):'','Κιλά καρπού':s.kgFruit,'Κιλά λαδιού':s.kgOil,'Κράτηση ελαιουργείου (κιλά)':s.millKept,'Για το σπίτι (κιλά)':s.home,'Σε φύλαξη (κιλά)':s.stored,'Λάδι που πουλήθηκε (κιλά)':s.oilSoldKg,'Μέση τιμή λαδιού (€/κιλό)':s.oilAvg!=null?Math.round(s.oilAvg*1000)/1000:'','Απόθεμα λαδιού (κιλά)':s.oilStock};
     for(const c of CATS)r[c.name+' (€)']=round2(s.byCat[c.id]||0);return r});
   const work=[],inc=[];for(const e of entriesSorted()){if(!S.fields.has(e.fieldId)&&e.kind!=='farm')continue;
-    if(e.kind!=='income'){const ls=e.lines?.length?e.lines:[{}];for(const l of ls)work.push({'Ημερομηνία':e.date,'Αγροτεμάχιο':fname(e.fieldId),'Χρονιά':e.season,'Εργασία':e.task,'Κατηγορία':CAT[l.cat]?.name||'','Ποσότητα':l.qty||'','Μονάδα':CAT[l.cat]?.unit||'','Τιμή (€)':l.price||'','Ποσό (€)':l.amount||0,'Κιλά καρπού':e.kgFruit||'','Κιλά λαδιού':e.kgOil||'','Κράτηση ελαιουργείου (κιλά)':e.millKeptKg||'','Για το σπίτι (κιλά)':e.homeKg||'','Σε φύλαξη (κιλά)':MILL.has(e.task)?e.storedKg||0:'','Τέλος συγκομιδής':e.harvestDone?'Ναι':'','Σημείωση':e.note||''})}
-    else inc.push({'Ημερομηνία':e.date,'Αγροτεμάχιο':fname(e.fieldId),'Χρονιά':e.season,'Είδος':INC[e.incomeKind]?.name||'','Κιλά':e.qty||'','Τιμή / κιλό (€)':e.price||'','Ποσό (€)':e.amount||0,'Σημείωση':e.note||''})}
+    if(e.kind!=='income'){const ls=e.lines?.length?e.lines:[{}];for(const l of ls)work.push({'Ημερομηνία':xDate(e.date),'Αγροτεμάχιο':fname(e.fieldId),'Χρονιά':e.season,'Εργασία':e.task,'Κατηγορία':CAT[l.cat]?.name||'','Ποσότητα':l.qty||'','Μονάδα':CAT[l.cat]?.unit||'','Τιμή (€)':l.price||'','Ποσό (€)':l.amount||0,'Κιλά καρπού':e.kgFruit||'','Κιλά λαδιού':e.kgOil||'','Κράτηση ελαιουργείου (κιλά)':e.millKeptKg||'','Για το σπίτι (κιλά)':e.homeKg||'','Σε φύλαξη (κιλά)':MILL.has(e.task)?e.storedKg||0:'','Τέλος συγκομιδής':e.harvestDone?'Ναι':'','Σημείωση':e.note||''})}
+    else inc.push({'Ημερομηνία':xDate(e.date),'Αγροτεμάχιο':fname(e.fieldId),'Χρονιά':e.season,'Είδος':INC[e.incomeKind]?.name||'','Κιλά':e.qty||'','Τιμή / κιλό (€)':e.price||'','Ποσό (€)':e.amount||0,'Σημείωση':e.note||''})}
   const fl=fieldsSorted().map(f=>{const p=fieldPoint(f);return {'Αγροτεμάχιο':f.name,'Καλλιέργεια':CROPS[f.crop].name,'Στρέμματα':num(f.stremmata),'Δέντρα / κλήματα':num(f.plants),'Ποικιλία':f.variety||'','Αρδευόμενο':f.irrigated?'Ναι':'Όχι','Γεωγρ. πλάτος':p?+p[1].toFixed(6):'','Γεωγρ. μήκος':p?+p[0].toFixed(6):'','Σημειώσεις':f.notes||''}});
-  const add=(rows,name)=>{const ws=XLSX.utils.json_to_sheet(rows.length?rows:[{'':'Χωρίς στοιχεία'}]);const keys=Object.keys(rows[0]||{'':1});ws['!cols']=keys.map(k=>({wch:Math.max(10,Math.min(32,k.length+2))}));XLSX.utils.book_append_sheet(wb,ws,name)};
+  const add=(rows,name)=>{const ws=XLSX.utils.json_to_sheet(rows.length?rows:[{'':'Χωρίς στοιχεία'}],{dateNF:'dd/mm/yyyy'});const keys=Object.keys(rows[0]||{'':1});ws['!cols']=keys.map(k=>({wch:Math.max(10,Math.min(32,k.length+2))}));XLSX.utils.book_append_sheet(wb,ws,name)};
   add(rep,'Αναφορά');add(work,'Εργασίες και έξοδα');add(inc,'Έσοδα');add(fl,'Αγροτεμάχια');
   const out=XLSX.write(wb,{type:'array',bookType:'xlsx'});
   if(await saveFile(`Agrologio_${today()}.xlsx`,new Blob([out])))toast('Το Excel αποθηκεύτηκε')}
@@ -843,6 +845,17 @@ function go(t){tab=t;
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.tab==='entry'&&!editing)resetEntry($('#eField').value);go(b.dataset.tab)};
 $('#kindWork').onclick=()=>setKind('work');$('#kindIncome').onclick=()=>setKind('income');
 $('#eField').onchange=()=>{if(!editing){$('#eLines').innerHTML='';syncEntryForm(true);addLine(defaultLine())}else syncEntryForm(true)};$('#eDate').onchange=()=>{if(!editing)syncEntryForm(true)};
+(function(){const h=$('#eDate'),t=$('#eDateTxt'),pk=$('#eDatePick'),d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  Object.defineProperty(h,'value',{get(){return d.get.call(h)},set(v){d.set.call(h,v);t.value=fmtDate(v);pk.value=v||'';t.setCustomValidity('')}});
+  const parse=x=>{const m=x.trim().match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2}|\d{4})$/);if(!m)return '';let [,dd,mm,yy]=m;if(yy.length===2)yy='20'+yy;
+    const iso=`${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`,o=new Date(+yy,+mm-1,+dd);return o.getDate()===+dd&&o.getMonth()===+mm-1?iso:''};
+  const set=iso=>{if(iso===d.get.call(h))return;d.set.call(h,iso);pk.value=iso;h.dispatchEvent(new Event('change'))};
+  t.addEventListener('input',e=>{let v=t.value;if(/^[\d\/]*$/.test(v)&&[...v].every((c,i)=>c!=='/'||i===2||i===5)){const g=v.replace(/\D/g,'').slice(0,8);v=g.length>4?g.slice(0,2)+'/'+g.slice(2,4)+'/'+g.slice(4):g.length>2?g.slice(0,2)+'/'+g.slice(2):g;if(e.inputType!=='deleteContentBackward')t.value=v}
+    const iso=parse(t.value);t.setCustomValidity(iso||!t.value?'':'Γράψε την ημερομηνία ως ΗΗ/ΜΜ/ΕΕΕΕ');if(iso)set(iso)});
+  t.addEventListener('blur',()=>{const iso=parse(t.value);if(iso)t.value=fmtDate(iso)});
+  $('#eDateBtn').onclick=()=>{pk.value=d.get.call(h)||today();try{pk.showPicker()}catch{pk.focus()}};
+  pk.addEventListener('change',()=>{if(pk.value){t.value=fmtDate(pk.value);t.setCustomValidity('');set(pk.value)}});
+})();;
 $('#eTask').onchange=syncTask;$('#iKind').onchange=syncIncome;
 $('#iQty').oninput=$('#iPrice').oninput=()=>{const a=num($('#iQty').value)*num($('#iPrice').value);if(a)$('#iAmount').value=Math.round(a*100)/100};
 $('#addLine').onclick=()=>addLine(defaultLine());$('#entryForm').onsubmit=saveEntry;$('#eCancel').onclick=()=>{resetEntry();go('log')};$('#eDelete').onclick=deleteEntry;

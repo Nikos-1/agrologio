@@ -5,6 +5,9 @@ const fs = require('fs');
 const initSqlJs = require('sql.js/dist/sql-wasm.js');
 const { autoUpdater } = require('electron-updater');
 
+// Greek locale for the whole program (date fields DD/MM/YYYY, numbers with comma)
+app.commandLine.appendSwitch('lang', 'el');
+
 const COLLECTIONS = ['fields', 'entries', 'settings'];
 let SQL, db, dbPath;
 
