@@ -133,7 +133,13 @@ function setupUpdates() {
     manualCheck = false;
   });
   autoUpdater.on('error', err => {
-    if (manualCheck) dialog.showMessageBox({ type: 'warning', title: 'Αγρολόγιο', message: 'Δεν έγινε έλεγχος για ενημερώσεις.', detail: 'Ελέγξτε τη σύνδεση στο διαδίκτυο και δοκιμάστε ξανά.\n\n' + (err && err.message || err) });
+    if (manualCheck) {
+      const msg = String(err && err.message || err);
+      const preparing = /latest\.yml|404/.test(msg);
+      dialog.showMessageBox({ type: preparing ? 'info' : 'warning', title: 'Αγρολόγιο',
+        message: preparing ? 'Η νέα έκδοση ετοιμάζεται ακόμα.' : 'Δεν έγινε έλεγχος για ενημερώσεις.',
+        detail: preparing ? 'Δοκιμάστε ξανά σε λίγα λεπτά.' : 'Ελέγξτε τη σύνδεση στο διαδίκτυο και δοκιμάστε ξανά.\n\n' + msg.split('\n')[0].slice(0, 200) });
+    }
     manualCheck = false;
   });
   autoUpdater.on('update-downloaded', async info => {

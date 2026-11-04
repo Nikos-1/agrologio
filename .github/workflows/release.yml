@@ -1,4 +1,5 @@
-# Χτίζει το πρόγραμμα για Windows και ανεβάζει νέα έκδοση στα Releases όταν σπρωχτεί tag vX.Y.Z.
+# Χτίζει το πρόγραμμα για Windows και ανεβάζει την έκδοση του package.json στα Releases
+# (installer, blockmap και latest.yml, από όπου τη βρίσκουν τα εγκατεστημένα προγράμματα).
 name: release
 on:
   push:
@@ -17,6 +18,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node build-app.js
-      - run: npx electron-builder --win nsis --x64 --publish always
+      - run: npx electron-builder --win nsis --x64 --publish never
+      - name: Ανέβασμα στα Releases
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          V=$(node -p "require('./package.json').version")
+          gh release view "v$V" >/dev/null 2>&1 || gh release create "v$V" --target "$GITHUB_SHA" --title "Αγρολόγιο $V" --notes "Δείτε τις αλλαγές στο README."
+          gh release upload "v$V" "dist/Agrologio-Setup-$V.exe" "dist/Agrologio-Setup-$V.exe.blockmap" dist/latest.yml --clobber
