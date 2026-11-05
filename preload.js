@@ -5,5 +5,7 @@ contextBridge.exposeInMainWorld('katastixoNative', {
   del: (c, id) => ipcRenderer.invoke('db:delete', c, id),
   saveFile: (filename, bytes) => ipcRenderer.invoke('file:save', filename, bytes),
   reset: () => ipcRenderer.invoke('db:reset'),
-  info: () => ipcRenderer.invoke('app:info')
+  info: () => ipcRenderer.invoke('app:info'),
+  systemDark: () => ipcRenderer.invoke('theme:dark'),
+  onSystemTheme: cb => ipcRenderer.on('theme:changed', (_e, dark) => cb(dark))
 });

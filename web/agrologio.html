@@ -139,6 +139,7 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
 @media (prefers-reduced-motion:no-preference){.card,.item{transition:background .15s}}
 #millPart input[readonly]{background:transparent;border-style:dashed;font-weight:600}
 .datebox{position:relative;display:flex}.datebox #eDateTxt{flex:1;min-width:0;padding-right:42px}#eDateBtn{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:none;box-shadow:none;padding:6px;min-height:0;color:var(--muted,inherit);cursor:pointer}#eDatePick{position:absolute;right:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
+.setrow.themerow{grid-template-columns:1fr minmax(0,240px)}.themerow .unit{border:0;background:none}.themerow select{width:100%}
 </style>
 
 <header class="top">
@@ -279,7 +280,7 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
       </div>
       <div class="setgroup">
         <h3 class="label">Εμφάνιση</h3>
-        <label class="setrow" for="sTheme"><span><b>Χρώματα</b><small>Ισχύει αμέσως, σε αυτόν τον υπολογιστή</small></span><span class="unit"><select id="sTheme"><option value="light">Ανοιχτά</option><option value="dark">Σκούρα</option><option value="auto">Όπως τα Windows</option></select></span></label>
+        <label class="setrow themerow" for="sTheme"><span><b>Εμφάνιση εφαρμογής</b><small>Ισχύει αμέσως. Το «Σύμφωνα με το σύστημα» αλλάζει μόνο του όταν αλλάζει το θέμα των Windows.</small></span><span class="unit"><select id="sTheme"><option value="light">Light (ανοιχτά)</option><option value="dark">Dark (σκούρα)</option><option value="auto">Σύμφωνα με το σύστημα</option></select></span></label>
       </div>
       <div class="setgroup">
         <h3 class="label">Κάρτα Ελαιουργείου</h3>
@@ -317,7 +318,11 @@ const COMMON_TASKS=['Επίσκεψη / επιθεώρηση','Ασφάλιση 
 const HARVEST=new Set(['Συγκομιδή','Τρύγος']);
 const MILL=new Set(['Άλεση']);
 function getTheme(){try{return localStorage.getItem('agrologio-theme')||'light'}catch{return 'light'}}
-function applyTheme(t){if(t==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t}
+function applyTheme(t){const r=document.documentElement,N=window.katastixoNative;
+  if(t!=='auto'){r.dataset.theme=t;return}
+  if(N?.systemDark){N.systemDark().then(d=>{if(getTheme()==='auto')r.dataset.theme=d?'dark':'light'});return}
+  delete r.dataset.theme}
+window.katastixoNative?.onSystemTheme?.(d=>{if(getTheme()==='auto')document.documentElement.dataset.theme=d?'dark':'light'});
 applyTheme(getTheme());
 const millPct=()=>num(S.settings.millPct);
 const r1=x=>Math.round(x*10)/10;

@@ -1,5 +1,5 @@
 // Αγρολόγιο: Electron main process. Data lives in a local SQLite file (sql.js).
-const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const initSqlJs = require('sql.js/dist/sql-wasm.js');
@@ -108,6 +108,9 @@ ipcMain.handle('db:reset', () => {
   persist();
   return true;
 });
+// Windows light/dark theme, for the "Σύμφωνα με το σύστημα" appearance option
+ipcMain.handle('theme:dark', () => nativeTheme.shouldUseDarkColors);
+nativeTheme.on('updated', () => { for (const w of BrowserWindow.getAllWindows()) w.webContents.send('theme:changed', nativeTheme.shouldUseDarkColors); });
 ipcMain.handle('app:info', () => ({ version: app.getVersion(), dbPath }));
 
 function createWindow() {
