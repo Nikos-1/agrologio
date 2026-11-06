@@ -475,7 +475,7 @@ function mapsLinks(f){const p=fieldPoint(f);if(!p)return '';const [lon,lat]=p;
 // Text of a KML file in the encoding its XML header names (old Greek files are often windows-1253 / iso-8859-7).
 function decodeXml(bytes){const head=new TextDecoder('latin1').decode(bytes.slice(0,200));const m=head.match(/encoding=["']([\w.-]+)["']/i);
   if(m&&!/^utf-?8$/i.test(m[1])){try{return new TextDecoder(m[1].toLowerCase()).decode(bytes)}catch{}}
-  const t=new TextDecoder().decode(bytes);if(t.includes('�')){try{return new TextDecoder('windows-1253').decode(bytes)}catch{}}return t}
+  const t=new TextDecoder().decode(bytes);if(t.includes('\ufffd')){try{return new TextDecoder('windows-1253').decode(bytes)}catch{}}return t}
 async function readKmlFile(file){
   const buf=new Uint8Array(await file.arrayBuffer());
   if(buf[0]===0x50&&buf[1]===0x4b){ // KMZ (zip): read the central directory, which always has the real sizes
