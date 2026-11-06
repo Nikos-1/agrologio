@@ -287,8 +287,9 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
       </div>
       <div class="setgroup">
         <h3 class="label">Επιδοτήσεις</h3>
-        <label class="setrow" for="sSubOlive"><span><b>Ελιά</b><small>Ποσό ανά στρέμμα ελαιώνα</small></span><span class="unit"><input id="sSubOlive" type="number" min="0" step="any" inputmode="decimal"><i>€ / στρ.</i></span></label>
-        <label class="setrow" for="sSubVine"><span><b>Αμπέλι</b><small>Ποσό ανά στρέμμα αμπελιού</small></span><span class="unit"><input id="sSubVine" type="number" min="0" step="any" inputmode="decimal"><i>€ / στρ.</i></span></label>
+        <label class="setrow" for="sSubOlive"><span><b>Ελιά</b><small>Ανά στρέμμα ελαιώνα, για τη χρονιά σε εξέλιξη</small></span><span class="unit"><input id="sSubOlive" type="number" min="0" step="any" inputmode="decimal"><i>€ / στρ.</i></span></label>
+        <label class="setrow" for="sSubVine"><span><b>Αμπέλι</b><small>Ανά στρέμμα αμπελιού, για τη χρονιά σε εξέλιξη</small></span><span class="unit"><input id="sSubVine" type="number" min="0" step="any" inputmode="decimal"><i>€ / στρ.</i></span></label>
+        <div id="subYears"></div>
         <p class="note">Η επιδότηση υπολογίζεται αυτόματα για κάθε αγροτεμάχιο και χρονιά (στρέμματα × ποσό). Αν καταχωρίσεις πραγματική επιδότηση ως έσοδο, μετράει εκείνη. Το ποσό το βρίσκεις στην πράξη πληρωμής ΟΠΕΚΕΠΕ ή στο ΚΥΔ.</p>
       </div>
       <div class="setgroup">
@@ -376,6 +377,10 @@ const INCOME=[
 const INC=Object.fromEntries(INCOME.map(c=>[c.id,c]));
 const FARM='__farm';
 const SCOPES={all:'Όλα τα αγροτεμάχια',olive:'Μόνο ελιές',vine:'Μόνο αμπέλια'};
+// Subsidy per στρέμμα of a harvest year: its own amount if one is kept for that year, otherwise the current one.
+const subRate=(y,crop)=>{const o=S.settings.subsidyBySeason?.[y]?.[crop];return num(o!=null&&o!==''?o:S.settings.subsidy?.[crop])};
+// Years that are over for a crop (every field of that crop has moved past them): their amount must not move any more.
+const pastYears=crop=>{const open=[...S.fields.keys()].filter(id=>S.fields.get(id).crop===crop).map(id=>openSeason(id));const lo=open.length?Math.min(...open):Infinity;return allSeasons().filter(y=>y<lo)};
 const DEFAULT_SETTINGS={hiredDayRate:50,familyDayRate:50,subsidy:{olive:0,vine:0}};
 
 const $=s=>document.querySelector(s);
@@ -444,7 +449,7 @@ function stats(){
     const f=S.fields.get(s.fieldId);
     if(s.mOil){s.kgOil=s.mOil;if(s.mFruit)s.kgFruit=s.mFruit}
     s.oilStock=s.stored?r1(s.stored-s.oilSoldKg):0;s.oilAvg=s.oilSoldKg?s.oilSoldAmt/s.oilSoldKg:null;
-    s.subsidyEst=num(f.stremmata)*num(S.settings.subsidy?.[f.crop]);
+    s.subsidyEst=num(f.stremmata)*subRate(s.season,f.crop);
     s.subsidy=s.subsidyManual??s.subsidyEst; s.subsidyIsEst=s.subsidyManual==null&&s.subsidyEst>0;
     s.income=s.sales+s.otherInc+s.subsidy; s.net=s.income-s.cost;
     s.perStr=num(f.stremmata)?s.net/num(f.stremmata):null; s.perPlant=num(f.plants)?s.net/num(f.plants):null;
@@ -733,7 +738,12 @@ function renderReports(){
   labelCells(el);
 }
 
-function renderSettings(){if(document.activeElement?.closest('#setForm'))return;const s=S.settings;$('#sHired').value=s.hiredDayRate??'';$('#sFamily').value=s.familyDayRate??'';$('#sSubOlive').value=s.subsidy?.olive??'';$('#sSubVine').value=s.subsidy?.vine??'';$('#sMillPct').value=s.millPct||''}
+function renderSettings(){if(document.activeElement?.closest('#setForm'))return;const s=S.settings;$('#sHired').value=s.hiredDayRate??'';$('#sFamily').value=s.familyDayRate??'';$('#sSubOlive').value=s.subsidy?.olive??'';$('#sSubVine').value=s.subsidy?.vine??'';$('#sMillPct').value=s.millPct||'';renderSubYears()}
+function renderSubYears(){const box=$('#subYears');const crops=['olive','vine'].filter(c=>[...S.fields.values()].some(f=>f.crop===c));
+  const ys=[...new Set(crops.flatMap(pastYears))].sort((a,b)=>b-a);
+  if(!ys.length){box.innerHTML='';return}
+  box.innerHTML=`<p class="note" style="margin:10px 0 4px"><b>Ολοκληρωμένες χρονιές.</b> Κάθε χρονιά κρατά το δικό της ποσό, ώστε η αλλαγή του ποσού πάνω να μην αλλάζει τα παλιά καθαρά.</p>`+
+    ys.map(y=>crops.filter(c=>pastYears(c).includes(y)).map(c=>`<label class="setrow"><span><b>${CROPS[c].name} ${seasonName(y,c)}</b></span><span class="unit"><input class="subY" data-y="${y}" data-c="${c}" inputmode="decimal" value="${String(subRate(y,c)).replace('.',',')}"><i>€ / στρ.</i></span></label>`).join('')).join('')}
 
 
 function renderEntrySummary(){const el=$('#entrySummary');if(!el)return;const fs=fieldsSorted();if(!fs.length||!db){el.innerHTML='';return}
@@ -1003,6 +1013,11 @@ $('#setForm').addEventListener('input',e=>{if(e.target.id!=='sTheme')$('#setDirt
 $('#setForm').onsubmit=async e=>{e.preventDefault();const d={hiredDayRate:num($('#sHired').value),familyDayRate:num($('#sFamily').value),subsidy:{olive:num($('#sSubOlive').value),vine:num($('#sSubVine').value)},millPct:num($('#sMillPct').value)};
   if(d.millPct<0||d.millPct>=100){toast('Το ποσοστό του ελαιουργείου πρέπει να είναι από 0 έως 99 %');$('#sMillPct').focus();return}
   if([d.hiredDayRate,d.familyDayRate,d.subsidy.olive,d.subsidy.vine].some(v=>v<0)){toast('Οι αριθμοί δεν μπορεί να είναι αρνητικοί');return}
+  // Past years keep the amount they had: changing the current amount writes the old one into each finished year first.
+  const by=JSON.parse(JSON.stringify(S.settings.subsidyBySeason||{}));
+  for(const c of ['olive','vine']){const old=num(S.settings.subsidy?.[c]);if(old!==d.subsidy[c])for(const y of pastYears(c))if(by[y]?.[c]==null)(by[y]??={})[c]=old}
+  for(const i of document.querySelectorAll('#subYears .subY')){const v=num(i.value);if(v<0){toast('Οι αριθμοί δεν μπορεί να είναι αρνητικοί');i.focus();return}(by[i.dataset.y]??={})[i.dataset.c]=v}
+  d.subsidyBySeason=by;
   try{await db.doc('settings/main').set({...S.settings,...d});$('#setDirty').hidden=true;document.activeElement.blur();toast('Οι ρυθμίσεις αποθηκεύτηκαν')}catch(err){toast('Δεν αποθηκεύτηκαν: '+(err.message||err.code))}};
 $('#delExamples').onclick=async e=>{const b=e.target;if(!b.dataset.sure){b.dataset.sure=1;b.textContent='Σίγουρα; Πάτα ξανά';return}b.disabled=true;
   for(const [id,x] of S.entries)if(x.example)await db.doc('entries/'+id).delete();for(const [id,x] of S.fields)if(x.example)await db.doc('fields/'+id).delete();toast('Τα παραδείγματα σβήστηκαν');b.disabled=false;b.textContent='Διαγραφή παραδειγμάτων';delete b.dataset.sure};
