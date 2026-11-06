@@ -5,7 +5,9 @@
   const load = async () => { if (!cache) cache = await N.all(); return cache; };
   const snap = (id, d) => ({ id, exists: d !== undefined, data: () => (d === undefined ? undefined : JSON.parse(JSON.stringify(d))), metadata: { fromCache: false, hasPendingWrites: false } });
   const qsnap = c => { const docs = Object.entries(cache[c]).map(([id, d]) => snap(id, d)); return { docs, size: docs.length, empty: !docs.length, docChanges: () => [], metadata: {} }; };
-  const fire = (c, id) => { listeners[c].forEach(fn => fn(qsnap(c))); (docListeners.get(c + '/' + id) || new Set()).forEach(fn => fn(snap(id, cache[c][id]))); };
+  // A listener error (page render) must not look like a failed save.
+  const safe = (fn, v) => { try { fn(v); } catch (err) { console.error(err); } };
+  const fire = (c, id) => { listeners[c].forEach(fn => safe(fn, qsnap(c))); (docListeners.get(c + '/' + id) || new Set()).forEach(fn => safe(fn, snap(id, cache[c][id]))); };
   const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   const doc = (c, id) => ({
     id, path: c + '/' + id,
@@ -13,7 +15,7 @@
     set: async d => { await load(); await N.set(c, id, d); cache[c][id] = JSON.parse(JSON.stringify(d)); fire(c, id); },
     update: async d => { await load(); const m = { ...(cache[c][id] || {}), ...d }; await N.set(c, id, m); cache[c][id] = m; fire(c, id); },
     delete: async () => { await load(); await N.del(c, id); delete cache[c][id]; fire(c, id); },
-    onSnapshot: (next) => { const k = c + '/' + id; if (!docListeners.has(k)) docListeners.set(k, new Set()); docListeners.get(k).add(next); load().then(() => next(snap(id, cache[c][id]))); return () => docListeners.get(k).delete(next); }
+    onSnapshot: (next, error) => { const k = c + '/' + id; if (!docListeners.has(k)) docListeners.set(k, new Set()); docListeners.get(k).add(next); load().then(() => next(snap(id, cache[c][id])), err => error && error(err)); return () => docListeners.get(k).delete(next); }
   });
   const db = {
     doc: p => { const [c, id] = p.split('/'); return doc(c, id); },
@@ -21,7 +23,7 @@
       path: c, doc: id => doc(c, id || newId()),
       add: async d => { const id = newId(); await doc(c, id).set(d); return { id, path: c + '/' + id }; },
       get: async () => { await load(); return qsnap(c); },
-      onSnapshot: (next) => { listeners[c].add(next); load().then(() => next(qsnap(c))); return () => listeners[c].delete(next); }
+      onSnapshot: (next, error) => { listeners[c].add(next); load().then(() => next(qsnap(c)), err => error && error(err)); return () => listeners[c].delete(next); }
     })
   };
   const downloads = {

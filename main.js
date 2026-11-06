@@ -11,20 +11,83 @@ app.commandLine.appendSwitch('lang', 'el');
 const COLLECTIONS = ['fields', 'entries', 'settings'];
 let SQL, db, dbPath;
 
+// Write the whole database to disk safely: temp file, flush to disk, then replace.
 function persist() {
   const tmp = dbPath + '.tmp';
-  fs.writeFileSync(tmp, Buffer.from(db.export()));
+  const fd = fs.openSync(tmp, 'w');
+  try { fs.writeSync(fd, Buffer.from(db.export())); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
   fs.renameSync(tmp, dbPath);
+}
+
+const backupDir = () => { const d = path.join(app.getPath('userData'), 'backups'); fs.mkdirSync(d, { recursive: true }); return d; };
+const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; };
+// Copy the current file into backups/ under `prefix-…`; keep the newest `keep` copies of that kind only (never touches other files).
+function backupFile(prefix, name, keep) {
+  if (!fs.existsSync(dbPath) || fs.statSync(dbPath).size === 0) return;
+  const dir = backupDir();
+  fs.copyFileSync(dbPath, path.join(dir, `${prefix}-${name}.sqlite`));
+  const mine = fs.readdirSync(dir).filter(f => f.startsWith(prefix + '-') && f.endsWith('.sqlite')).map(f => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs })).sort((a, b) => b.t - a.t);
+  for (const o of mine.slice(keep)) fs.rmSync(path.join(dir, o.f), { force: true });
+}
+
+// Open a database file; null if it is empty or not a valid SQLite database.
+function tryOpen(file) {
+  try {
+    const buf = fs.readFileSync(file); if (!buf.length) return null;
+    const d = new SQL.Database(buf);
+    const ok = d.exec('PRAGMA integrity_check')[0]?.values[0][0] === 'ok';
+    if (!ok) { d.close(); return null; }
+    return d;
+  } catch { return null; }
+}
+
+// The data file is damaged or empty: keep it aside and offer the newest good backup.
+async function recoverDb() {
+  let broken = dbPath.replace(/\.sqlite$/, `-χαλασμένο-${stamp()}.sqlite`);
+  for (let i = 2; fs.existsSync(broken); i++) broken = dbPath.replace(/\.sqlite$/, `-χαλασμένο-${stamp()}-${i}.sqlite`);
+  try { fs.renameSync(dbPath, broken); } catch {}
+  const dir = backupDir();
+  const cands = fs.readdirSync(dir).filter(f => f.endsWith('.sqlite')).map(f => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs })).sort((a, b) => b.t - a.t);
+  for (const c of cands) {
+    const d = tryOpen(path.join(dir, c.f)); if (!d) continue;
+    const when = new Date(c.t).toLocaleString('el-GR');
+    const r = await dialog.showMessageBox({ type: 'warning', title: 'Αγρολόγιο', buttons: ['Επαναφορά', 'Έξοδος'], defaultId: 0, cancelId: 1,
+      message: 'Το αρχείο των στοιχείων σου είναι κατεστραμμένο.',
+      detail: `Βρέθηκε αντίγραφο ασφαλείας της ${when}. Με «Επαναφορά» το πρόγραμμα ανοίγει με αυτό.\n\nΤο χαλασμένο αρχείο φυλάχτηκε ως:\n${broken}` });
+    if (r.response !== 0) { d.close(); app.exit(0); return null; }
+    return d;
+  }
+  const r = await dialog.showMessageBox({ type: 'warning', title: 'Αγρολόγιο', buttons: ['Ξεκίνα με κενό αρχείο', 'Έξοδος'], defaultId: 1, cancelId: 1,
+    message: 'Το αρχείο των στοιχείων σου είναι κατεστραμμένο και δεν βρέθηκε αντίγραφο ασφαλείας.',
+    detail: `Αν έχεις αντίγραφο (.json), ξεκίνα με κενό αρχείο και φέρ' το από Ρυθμίσεις → Αντίγραφο ασφαλείας.\n\nΤο χαλασμένο αρχείο φυλάχτηκε ως:\n${broken}` });
+  if (r.response !== 0) { app.exit(0); return null; }
+  return new SQL.Database();
 }
 
 async function openDb() {
   SQL = await initSqlJs({ locateFile: f => path.join(__dirname, 'node_modules/sql.js/dist', f) });
   dbPath = path.join(app.getPath('userData'), 'katastixo.sqlite');
-  db = fs.existsSync(dbPath) ? new SQL.Database(fs.readFileSync(dbPath)) : new SQL.Database();
+  if (fs.existsSync(dbPath)) { db = tryOpen(dbPath) || await recoverDb(); if (!db) return false; }
+  else db = new SQL.Database();
   createSchema();
   backupOnNewVersion();
   seedOnce();
   persist();
+  try { backupFile('ημερήσιο', stamp().slice(0, 10), 7); } catch {}
+  return true;
+}
+
+// Run one change; if it cannot be written to disk, undo it in memory too, so nothing half-saved is left behind.
+function writeChange(c, id, apply) {
+  const prev = db.exec(`SELECT data FROM ${c} WHERE id = ?`, [id])[0]?.values[0][0];
+  apply();
+  try { persist(); }
+  catch (err) {
+    if (prev === undefined) db.run(`DELETE FROM ${c} WHERE id = ?`, [id]);
+    else db.run(`INSERT OR REPLACE INTO ${c} (id, data, updated_at) VALUES (?, ?, datetime('now'))`, [id, prev]);
+    throw new Error('Δεν γράφτηκε στον δίσκο (' + (err.code || err.message) + ')');
+  }
+  return true;
 }
 
 function createSchema() {
@@ -45,12 +108,7 @@ function createSchema() {
 function backupOnNewVersion() {
   const row = db.exec("SELECT value FROM meta WHERE key = 'app_version'")[0];
   const prev = row && row.values[0][0], now = app.getVersion();
-  if (prev !== now && fs.existsSync(dbPath)) {
-    const dir = path.join(app.getPath('userData'), 'backups'); fs.mkdirSync(dir, { recursive: true });
-    fs.copyFileSync(dbPath, path.join(dir, `katastixo-before-${now}-from-${prev || 'old'}.sqlite`));
-    const old = fs.readdirSync(dir).filter(f => f.endsWith('.sqlite')).map(f => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs })).sort((a, b) => b.t - a.t);
-    for (const o of old.slice(5)) fs.rmSync(path.join(dir, o.f), { force: true });
-  }
+  if (prev !== now) backupFile('katastixo-before', `${now}-from-${prev || 'old'}`, 5);
   db.run("INSERT OR REPLACE INTO meta (key, value) VALUES ('app_version', ?)", [now]);
 }
 
@@ -85,10 +143,11 @@ ipcMain.handle('db:all', () => {
   return out;
 });
 ipcMain.handle('db:set', (_e, c, id, data) => {
-  db.run(`INSERT INTO ${check(c)} (id, data, updated_at) VALUES (?, ?, datetime('now')) ON CONFLICT(id) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`, [String(id), JSON.stringify(data)]);
-  persist(); return true;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('bad document');
+  check(c); id = String(id);
+  return writeChange(c, id, () => db.run(`INSERT INTO ${c} (id, data, updated_at) VALUES (?, ?, datetime('now')) ON CONFLICT(id) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`, [id, JSON.stringify(data)]));
 });
-ipcMain.handle('db:delete', (_e, c, id) => { db.run(`DELETE FROM ${check(c)} WHERE id = ?`, [String(id)]); persist(); return true; });
+ipcMain.handle('db:delete', (_e, c, id) => { check(c); id = String(id); return writeChange(c, id, () => db.run(`DELETE FROM ${c} WHERE id = ?`, [id])); });
 ipcMain.handle('file:save', async (e, filename, bytes) => {
   const win = BrowserWindow.fromWebContents(e.sender);
   const ext = path.extname(filename).slice(1);
@@ -100,6 +159,7 @@ ipcMain.handle('file:save', async (e, filename, bytes) => {
 });
 // Wipe: replace the database with a brand-new, empty one (no seed).
 ipcMain.handle('db:reset', () => {
+  backupFile('πριν-τη-διαγραφή', stamp(), 5);
   db.close();
   db = new SQL.Database();
   createSchema();
@@ -177,6 +237,9 @@ Menu.setApplicationMenu(Menu.buildFromTemplate([
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { const w = BrowserWindow.getAllWindows()[0]; if (w) { if (w.isMinimized()) w.restore(); w.focus(); } });
-  app.whenReady().then(openDb).then(createWindow).then(setupUpdates).catch(err => { dialog.showErrorBox('Σφάλμα εκκίνησης', String(err && err.stack || err)); app.quit(); });
+  app.whenReady().then(openDb).then(ok => { if (ok) { createWindow(); setupUpdates(); } }).catch(err => {
+    dialog.showErrorBox('Το Αγρολόγιο δεν μπόρεσε να ξεκινήσει', 'Δοκίμασε να το ανοίξεις ξανά. Αν συνεχίζει, στείλε αυτό το μήνυμα:\n\n' + String(err && err.message || err).slice(0, 300));
+    app.quit();
+  });
   app.on('window-all-closed', () => app.quit());
 }
