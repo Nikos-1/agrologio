@@ -3,6 +3,8 @@ contextBridge.exposeInMainWorld('katastixoNative', {
   all: () => ipcRenderer.invoke('db:all'),
   set: (c, id, data) => ipcRenderer.invoke('db:set', c, id, data),
   del: (c, id) => ipcRenderer.invoke('db:delete', c, id),
+  bulk: ops => ipcRenderer.invoke('db:bulk', ops),
+  backup: prefix => ipcRenderer.invoke('db:backup', prefix),
   saveFile: (filename, bytes) => ipcRenderer.invoke('file:save', filename, bytes),
   reset: () => ipcRenderer.invoke('db:reset'),
   info: () => ipcRenderer.invoke('app:info'),

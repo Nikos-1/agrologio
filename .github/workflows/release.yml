@@ -7,11 +7,25 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+# Ένα τρέξιμο τη φορά, ώστε δύο κλικ να μη φτιάξουν μισή έκδοση.
+concurrency:
+  group: release
+  cancel-in-progress: false
 jobs:
   windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Έλεγχος ότι η έκδοση είναι νέα
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          V=$(node -p "require('./package.json').version")
+          if gh release view "v$V" --json isDraft -q .isDraft 2>/dev/null | grep -q false; then
+            echo "::error::Η έκδοση $V έχει ήδη βγει. Άλλαξε τον αριθμό έκδοσης στο package.json πριν ξανατρέξεις."
+            exit 1
+          fi
       - uses: actions/setup-node@v7
         with:
           node-version: lts/*
@@ -25,5 +39,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           V=$(node -p "require('./package.json').version")
-          gh release view "v$V" >/dev/null 2>&1 || gh release create "v$V" --target "$GITHUB_SHA" --title "Αγρολόγιο $V" --notes "Δείτε τις αλλαγές στο README."
+          # Πρώτα ως πρόχειρο: τα εγκατεστημένα προγράμματα τη βλέπουν μόνο όταν ανέβουν όλα τα αρχεία.
+          gh release view "v$V" >/dev/null 2>&1 || gh release create "v$V" --draft --target "$GITHUB_SHA" --title "Αγρολόγιο $V" --notes "Δείτε τις αλλαγές στο README."
           gh release upload "v$V" "dist/Agrologio-Setup-$V.exe" "dist/Agrologio-Setup-$V.exe.blockmap" dist/latest.yml --clobber
+          gh release edit "v$V" --draft=false --latest

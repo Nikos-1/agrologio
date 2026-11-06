@@ -30,9 +30,13 @@ html = html.replace(/<link rel="preconnect"[^>]*>\n?/, '').replace(/<link rel="s
   .replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/jspdf@[\d.]+\/dist\/jspdf\.umd\.min\.js/, 'lib/jspdf.umd.min.js')
   .replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/jspdf-autotable@[\d.]+\/dist\/jspdf\.plugin\.autotable\.min\.js/, 'lib/jspdf.plugin.autotable.min.js')
   .replace(/<meta name="claude:viewport-fit-sides"[^>]*>\n?/, '');
+// Inline scripts become files, so the page can run with a strict policy (no inline scripts at all).
+let n = 0;
+html = html.replace(/<script>([\s\S]*?)<\/script>/g, (_, js) => { const f = `lib/page-${++n}.js`; fs.writeFileSync(path.join(out, f), js); return `<script src="${f}"></script>`; });
+if (/ on[a-z]+="/.test(html)) throw new Error('inline event handler left in page');
 if (/https:\/\/(cdn|fonts)/.test(html.replace(/https:\/\/(www\.google\.com|earth\.google\.com)/g, ''))) throw new Error('external resource left in page');
 const head = `<!doctype html><html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:">
 <style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <link rel="stylesheet" href="lib/fonts.css"><script src="lib/shim.js"></script></head><body>`;
 fs.writeFileSync(path.join(out, 'index.html'), head + html + '</body></html>');

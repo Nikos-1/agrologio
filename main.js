@@ -1,5 +1,5 @@
 // Αγρολόγιο: Electron main process. Data lives in a local SQLite file (sql.js).
-const { app, BrowserWindow, ipcMain, dialog, shell, Menu, nativeTheme } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu, nativeTheme, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const initSqlJs = require('sql.js/dist/sql-wasm.js');
@@ -7,6 +7,10 @@ const { autoUpdater } = require('electron-updater');
 
 // Greek locale for the whole program (date fields DD/MM/YYYY, numbers with comma)
 app.commandLine.appendSwitch('lang', 'el');
+// The data folder is fixed by name, so renaming the program in the build settings can never "lose" the data.
+if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', path.join(app.getPath('appData'), 'Αγρολόγιο'));
+const logFile = () => path.join(app.getPath('userData'), 'agrologio.log');
+const log = (...a) => { try { fs.appendFileSync(logFile(), new Date().toISOString() + ' ' + a.map(String).join(' ') + '\n'); } catch {} };
 
 const COLLECTIONS = ['fields', 'entries', 'settings'];
 let SQL, db, dbPath;
@@ -147,6 +151,30 @@ ipcMain.handle('db:set', (_e, c, id, data) => {
   check(c); id = String(id);
   return writeChange(c, id, () => db.run(`INSERT INTO ${c} (id, data, updated_at) VALUES (?, ?, datetime('now')) ON CONFLICT(id) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`, [id, JSON.stringify(data)]));
 });
+// Many writes at once (backup import, KML), saved to disk once. If the disk write fails, nothing of it stays.
+ipcMain.handle('db:bulk', (_e, ops) => {
+  if (!Array.isArray(ops)) throw new Error('bad ops');
+  const before = db.export();
+  try {
+    db.run('BEGIN');
+    for (const o of ops) {
+      const c = check(o.c), id = String(o.id);
+      if (o.del) db.run(`DELETE FROM ${c} WHERE id = ?`, [id]);
+      else {
+        if (!o.data || typeof o.data !== 'object' || Array.isArray(o.data)) throw new Error('bad document');
+        db.run(`INSERT INTO ${c} (id, data, updated_at) VALUES (?, ?, datetime('now')) ON CONFLICT(id) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`, [id, JSON.stringify(o.data)]);
+      }
+    }
+    db.run('COMMIT');
+    persist();
+  } catch (err) {
+    try { db.close(); } catch {}
+    db = new SQL.Database(before);
+    throw new Error('Δεν γράφτηκε στον δίσκο (' + (err.code || err.message) + ')');
+  }
+  return true;
+});
+ipcMain.handle('db:backup', (_e, prefix) => { backupFile(String(prefix).replace(/[^\p{L}\p{N}-]/gu, '').slice(0, 40) || 'χειροκίνητο', stamp(), 5); return true; });
 ipcMain.handle('db:delete', (_e, c, id) => { check(c); id = String(id); return writeChange(c, id, () => db.run(`DELETE FROM ${c} WHERE id = ?`, [id])); });
 ipcMain.handle('file:save', async (e, filename, bytes) => {
   const win = BrowserWindow.fromWebContents(e.sender);
@@ -173,23 +201,42 @@ ipcMain.handle('theme:dark', () => nativeTheme.shouldUseDarkColors);
 nativeTheme.on('updated', () => { for (const w of BrowserWindow.getAllWindows()) w.webContents.send('theme:changed', nativeTheme.shouldUseDarkColors); });
 ipcMain.handle('app:info', () => ({ version: app.getVersion(), dbPath }));
 
+function lockDownSession() {
+  // The program needs no camera, microphone, location or notifications.
+  session.defaultSession.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
+  session.defaultSession.setPermissionCheckHandler(() => false);
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200, height: 860, minWidth: 420, title: 'Αγρολόγιο', backgroundColor: '#f2f4ee',
     icon: path.join(__dirname, 'app', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
-  win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
-  win.webContents.on('will-navigate', (ev, url) => { if (!url.startsWith('file:')) { ev.preventDefault(); shell.openExternal(url); } });
+  // Only web links open, and only in the normal browser. The window itself never leaves the app page
+  // (a file dropped on the window by mistake must not replace the app).
+  const openWeb = url => { if (/^https:\/\//i.test(url)) shell.openExternal(url); };
+  win.webContents.setWindowOpenHandler(({ url }) => { openWeb(url); return { action: 'deny' }; });
+  win.webContents.on('will-navigate', (ev, url) => { if (url !== win.webContents.getURL()) { ev.preventDefault(); openWeb(url); } });
+  win.webContents.on('will-attach-webview', ev => ev.preventDefault());
+  // Right click: cut / copy / paste in Greek.
+  win.webContents.on('context-menu', (_e, p) => {
+    const items = p.isEditable
+      ? [{ label: 'Αποκοπή', role: 'cut', enabled: p.editFlags.canCut }, { label: 'Αντιγραφή', role: 'copy', enabled: p.editFlags.canCopy }, { label: 'Επικόλληση', role: 'paste', enabled: p.editFlags.canPaste }, { type: 'separator' }, { label: 'Επιλογή όλων', role: 'selectAll' }]
+      : p.selectionText ? [{ label: 'Αντιγραφή', role: 'copy' }] : [];
+    if (items.length) Menu.buildFromTemplate(items).popup({ window: win });
+  });
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
 }
 
 // Automatic updates from GitHub Releases (Nikos-1/agrologio). Data in userData is never touched by an update.
-let manualCheck = false, updateReady = false;
+let manualCheck = false, updateReady = false, updateTimer = null;
 function setupUpdates() {
   if (!app.isPackaged) return;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.disableWebInstaller = true;
+  autoUpdater.logger = { info: m => log('update', m), warn: m => log('update warn', m), error: m => log('update error', m), debug: () => {} };
   autoUpdater.on('update-not-available', () => {
     if (manualCheck) dialog.showMessageBox({ type: 'info', title: 'Αγρολόγιο', message: 'Έχετε την τελευταία έκδοση (' + app.getVersion() + ').' });
     manualCheck = false;
@@ -199,9 +246,10 @@ function setupUpdates() {
     manualCheck = false;
   });
   autoUpdater.on('error', err => {
+    log('update error', err && err.stack || err);
     if (manualCheck) {
       const msg = String(err && err.message || err);
-      const preparing = /latest\.yml|404/.test(msg);
+      const preparing = /latest\.yml/.test(msg) && /404/.test(msg);
       dialog.showMessageBox({ type: preparing ? 'info' : 'warning', title: 'Αγρολόγιο',
         message: preparing ? 'Η νέα έκδοση ετοιμάζεται ακόμα.' : 'Δεν έγινε έλεγχος για ενημερώσεις.',
         detail: preparing ? 'Δοκιμάστε ξανά σε λίγα λεπτά.' : 'Ελέγξτε τη σύνδεση στο διαδίκτυο και δοκιμάστε ξανά.\n\n' + msg.split('\n')[0].slice(0, 200) });
@@ -209,20 +257,20 @@ function setupUpdates() {
     manualCheck = false;
   });
   autoUpdater.on('update-downloaded', async info => {
-    updateReady = true;
+    updateReady = true; clearInterval(updateTimer);
     const win = BrowserWindow.getAllWindows()[0];
     const r = await dialog.showMessageBox(win, { type: 'info', title: 'Νέα έκδοση', buttons: ['Επανεκκίνηση τώρα', 'Αργότερα'], defaultId: 0, cancelId: 1,
       message: 'Υπάρχει νέα έκδοση του Αγρολογίου (' + info.version + ').',
-      detail: 'Τα στοιχεία σας μένουν όπως είναι. Αν πατήσετε «Αργότερα», η ενημέρωση θα εγκατασταθεί όταν κλείσετε το πρόγραμμα.' });
-    if (r.response === 0) { persist(); autoUpdater.quitAndInstall(false, true); }
+      detail: 'Τα στοιχεία σας μένουν όπως είναι. Αν πατήσετε «Αργότερα», η ενημέρωση θα εγκατασταθεί σιωπηλά όταν κλείσετε το πρόγραμμα.' });
+    if (r.response === 0) { persist(); autoUpdater.quitAndInstall(true, true); }
   });
   const check = () => autoUpdater.checkForUpdates().catch(() => {});
   setTimeout(check, 5000);
-  setInterval(check, 6 * 60 * 60 * 1000);
+  updateTimer = setInterval(check, 6 * 60 * 60 * 1000);
 }
 function checkUpdatesNow() {
   if (!app.isPackaged) return dialog.showMessageBox({ message: 'Ο έλεγχος ενημερώσεων λειτουργεί μόνο στο εγκατεστημένο πρόγραμμα.' });
-  if (updateReady) return autoUpdater.quitAndInstall(false, true);
+  if (updateReady) { persist(); return autoUpdater.quitAndInstall(true, true); }
   manualCheck = true; autoUpdater.checkForUpdates().catch(() => {});
 }
 
@@ -231,13 +279,13 @@ Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label: 'Άνοιγμα φακέλου δεδομένων', click: () => shell.showItemInFolder(dbPath) },
     { type: 'separator' }, { label: 'Έξοδος', role: 'quit' } ] },
   { label: 'Προβολή', submenu: [ { label: 'Ανανέωση', role: 'reload' }, { label: 'Μεγέθυνση', role: 'zoomIn' }, { label: 'Σμίκρυνση', role: 'zoomOut' }, { label: 'Κανονικό μέγεθος', role: 'resetZoom' }, { type: 'separator' }, { label: 'Πλήρης οθόνη', role: 'togglefullscreen' } ] },
-  { label: 'Βοήθεια', submenu: [ { label: 'Έλεγχος για ενημερώσεις', click: checkUpdatesNow }, { type: 'separator' }, { label: 'Σχετικά', click: () => dialog.showMessageBox({ title: 'Αγρολόγιο', message: 'Αγρολόγιο ' + app.getVersion(), detail: 'Τα στοιχεία αποθηκεύονται τοπικά στο αρχείο:\n' + dbPath }) } ] }
+  { label: 'Βοήθεια', submenu: [ { label: 'Έλεγχος για ενημερώσεις', click: checkUpdatesNow }, { type: 'separator' }, { label: 'Σχετικά', click: async () => { const r = await dialog.showMessageBox({ title: 'Αγρολόγιο', message: 'Αγρολόγιο ' + app.getVersion(), buttons: ['Εντάξει', 'Άνοιγμα φακέλου δεδομένων'], defaultId: 0, cancelId: 0, detail: 'Τα στοιχεία αποθηκεύονται τοπικά στο αρχείο:\n' + dbPath + '\n\nΤα αυτόματα αντίγραφα είναι στον φάκελο backups δίπλα του.' }); if (r.response === 1) shell.showItemInFolder(dbPath); } } ] }
 ]));
 
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { const w = BrowserWindow.getAllWindows()[0]; if (w) { if (w.isMinimized()) w.restore(); w.focus(); } });
-  app.whenReady().then(openDb).then(ok => { if (ok) { createWindow(); setupUpdates(); } }).catch(err => {
+  app.whenReady().then(openDb).then(ok => { if (ok) { lockDownSession(); createWindow(); setupUpdates(); } }).catch(err => {
     dialog.showErrorBox('Το Αγρολόγιο δεν μπόρεσε να ξεκινήσει', 'Δοκίμασε να το ανοίξεις ξανά. Αν συνεχίζει, στείλε αυτό το μήνυμα:\n\n' + String(err && err.message || err).slice(0, 300));
     app.quit();
   });

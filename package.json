@@ -1,7 +1,7 @@
 {
   "name": "agrologio",
   "productName": "Αγρολόγιο",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Κόστος και έσοδα αγροτικών εργασιών ανά αγροτεμάχιο",
   "author": "Nick",
   "main": "main.js",
@@ -27,16 +27,20 @@
       "icon": "build/icon.ico"
     },
     "nsis": {
-      "oneClick": false,
+      "oneClick": true,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Αγρολόγιο",
       "uninstallDisplayName": "Αγρολόγιο",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
-      "language": "1032"
+      "language": "1032",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "installerLanguages": [
+        "el_GR"
+      ]
     },
     "publish": [
       {
@@ -45,7 +49,18 @@
         "repo": "agrologio",
         "releaseType": "release"
       }
-    ]
+    ],
+    "electronLanguages": [
+      "el",
+      "en-US"
+    ],
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "onlyLoadAppFromAsar": true
+    }
   },
   "dependencies": {
     "electron-updater": "6.8.11",
