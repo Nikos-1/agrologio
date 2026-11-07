@@ -9,7 +9,7 @@
 /* Layout: a field ledger. Sticky tab strip, one column on phones, cards per field, tables for reports. */
 :root{
   --bg:#f2f4ee; --surface:#ffffff; --sunk:#e8ece2; --ink:#1c2318; --muted:#5d6858; --line:#d5dbcd; --field-line:#7f8a77;
-  --olive:#56682a; --olive-soft:#e4ead2; --vine:#71304f; --vine-soft:#f1e1e9;
+  --olive:#56682a; --olive-soft:#e4ead2; --vine:#71304f; --vine-soft:#f1e1e9; --other:#8a5a1c; --other-soft:#f3e6d2;
   --accent:#3f5a1f; --accent-ink:#ffffff; --good:#2a7443; --bad:#ab3628; --warn:#8a5a00;
   --f-display:"Literata", Georgia, "Times New Roman", serif;
   --f-body:"Commissioner", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -17,14 +17,14 @@
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#11140f; --surface:#1a1f17; --sunk:#232a1f; --ink:#e6ebdd; --muted:#9ba792; --line:#323b2c; --field-line:#6e7a64;
-  --olive:#b2c46c; --olive-soft:#2b3419; --vine:#df93b7; --vine-soft:#3a2230;
+  --olive:#b2c46c; --olive-soft:#2b3419; --vine:#df93b7; --vine-soft:#3a2230; --other:#e0b071; --other-soft:#3a2d1a;
   --accent:#b2c46c; --accent-ink:#151a0d; --good:#6fca8e; --bad:#f08b7c; --warn:#e8b75a; color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#11140f; --surface:#1a1f17; --sunk:#232a1f; --ink:#e6ebdd; --muted:#9ba792; --line:#323b2c; --field-line:#6e7a64;
-  --olive:#b2c46c; --olive-soft:#2b3419; --vine:#df93b7; --vine-soft:#3a2230;
+  --olive:#b2c46c; --olive-soft:#2b3419; --vine:#df93b7; --vine-soft:#3a2230; --other:#e0b071; --other-soft:#3a2d1a;
   --accent:#b2c46c; --accent-ink:#151a0d; --good:#6fca8e; --bad:#f08b7c; --warn:#e8b75a; color-scheme:dark }
 *{box-sizing:border-box}
-[hidden]{display:none!important}
+#kmlImport .fields{display:block}#kmlImport select{width:auto;max-width:100%;min-width:min(100%,320px)}[hidden]{display:none!important}
 html{font-size:100%;scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}html[data-size="l"]{font-size:112.5%}html[data-size="xl"]{font-size:125%}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:.9375rem;line-height:1.45}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
@@ -54,7 +54,7 @@ section[hidden]{display:none!important}
 .banner{background:var(--sunk);border-radius:var(--r);padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .chip{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
 .chip.olive{background:var(--olive-soft);color:var(--olive)}
-.chip.vine{background:var(--vine-soft);color:var(--vine)}
+.chip.vine{background:var(--vine-soft);color:var(--vine)}.chip.other{background:var(--other-soft);color:var(--other)}.chip.none{background:var(--sunk);color:var(--muted)}
 .chip.open{background:var(--sunk);color:var(--warn)}
 .chip.closed{background:var(--sunk);color:var(--good)}
 .chip.ex{background:var(--sunk);color:var(--muted)}
@@ -82,6 +82,7 @@ ol.steps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:co
 #lmap{height:clamp(420px,62vh,640px);border-radius:var(--r);background:var(--sunk);z-index:0}@media (max-width:700px){#lmap{height:320px}}
 .lmlbl{background:rgba(18,22,14,.82);color:#fff;border:0;border-radius:6px;box-shadow:none;font:600 12px var(--f-body);padding:3px 7px;text-align:center;line-height:1.3}.lmlbl::before{display:none}.lmlbl small{display:block;font-weight:500;opacity:.85}
 .leaflet-container{font:12px var(--f-body)}.lmall{background:#fff;color:#222;border:2px solid rgba(0,0,0,.2);border-radius:4px;font:700 13px var(--f-body);padding:5px 9px;min-height:0;cursor:pointer;box-shadow:none}.lmall:hover{background:#f4f4f4}.leaflet-control-layers label{padding:2px 0;color:#222}.leaflet-control-layers label>span{display:flex;gap:6px;align-items:center}.leaflet-control-layers input{width:auto;min-height:0;margin:0;padding:0}.leaflet-control-layers-list,.leaflet-control-layers-expanded{max-height:none!important;overflow:visible!important;padding-right:10px}
+.areas .areagrid{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:flex-end}.areas .areagrid>div{display:flex;flex-direction:column;gap:4px}.areanum{font:700 1.15rem var(--f-display);font-variant-numeric:tabular-nums}
 svg.fmap{width:100%;height:auto;display:block;margin:8px 0;background:var(--sunk);border-radius:var(--r)}svg.fmap .fm{cursor:pointer}svg.fmap .fm:hover path,svg.fmap .fm:hover circle,svg.fmap .fm:focus path,svg.fmap .fm:focus circle{stroke-width:3}svg.fmap .fm:focus{outline:none}svg.fmap .fmname{font:600 12px var(--f-body);fill:var(--ink);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}svg.fmap .fmval{font:500 11px var(--f-body);fill:var(--muted);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}
 svg.cmp{width:100%;height:auto;display:block;margin:6px 0}svg.cmp .cbase{stroke:var(--field-line);stroke-width:1}svg.cmp .cval{font:600 11px var(--f-body);fill:var(--ink)}svg.cmp .clab{font:500 10.5px var(--f-body);fill:var(--muted)}svg.cmp .cbar:hover path{filter:brightness(1.15)}
 .note.warn{color:var(--warn);font-weight:600}
@@ -127,7 +128,7 @@ tr.total td{font-weight:700;background:var(--sunk)}
 .item.flash{background:var(--olive-soft)}
 .setcard{gap:18px}
 .setgrid{display:grid;grid-template-columns:1fr;gap:14px;align-items:start}.setcol{display:flex;flex-direction:column;gap:14px;min-width:0}
-#tab-settings{display:grid;grid-template-columns:1fr;gap:14px;align-items:start}
+#tab-settings{display:grid;grid-template-columns:1fr;gap:14px;align-items:stretch}
 @media (min-width:980px){.setgrid{grid-template-columns:1fr 1fr}#tab-settings{grid-template-columns:1fr 1fr}#tab-settings>#setForm{grid-column:1/-1}}
 .setgroup{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .setgroup>h3{padding:10px 14px;background:var(--sunk);margin:0}
@@ -153,7 +154,7 @@ tr.total td{font-weight:700;background:var(--sunk)}
 button.sure{background:var(--bad);border-color:var(--bad);color:var(--surface);padding:6px 10px}
 @media (max-width:640px){.detail{padding-left:14px}.dline{grid-template-columns:1fr 90px 80px}.dline .dq{grid-column:1/-1;grid-row:2}.dline.editing .acts{grid-column:1/-1}}
 .danger-zone{border-color:color-mix(in srgb,var(--bad) 45%,var(--line))}
-.danger-zone h2{color:var(--bad)}.danger-zone>p.note{margin:0}.danger-zone{gap:10px}
+.danger-zone h2{color:var(--bad)}#tab-settings>.setcard:not(#setForm)>p.note{margin:0}#tab-settings>.setcard:not(#setForm){gap:10px}
 .wipebox{border:1px solid var(--bad);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--sunk)}
 .wipebox ul{margin:0;padding-left:20px}
 .wipebox code{font:700 1rem var(--f-body);color:var(--bad)}
@@ -234,7 +235,7 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
             <div class="linetotal"><span>Σύνολο</span><span class="num" id="eTotal"></span></div>
           </div>
           <div id="harvestPart" class="stack" hidden>
-            <div class="fields">
+            <div class="fields" id="eKgWrap">
               <label class="f">Κιλά καρπού<input id="eKgFruit" type="number" min="0" step="any" inputmode="decimal"></label>
               <label class="f" id="eKgOilWrap">Κιλά λαδιού<input id="eKgOil" type="number" min="0" step="any" inputmode="decimal"></label>
             </div>
@@ -328,6 +329,7 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
         <h3 class="label">Επιδοτήσεις</h3>
         <label class="setrow" for="sSubOlive"><span><b>Ελιά</b><small>Ανά στρέμμα ελαιώνα, για τη χρονιά σε εξέλιξη</small></span><span class="unit"><input id="sSubOlive" type="number" min="0" step="any" inputmode="decimal"><i>€ / στρ.</i></span></label>
         <label class="setrow" for="sSubVine"><span><b>Αμπέλι</b><small>Ανά στρέμμα αμπελιού, για τη χρονιά σε εξέλιξη</small></span><span class="unit"><input id="sSubVine" type="number" min="0" step="any" inputmode="decimal"><i>€ / στρ.</i></span></label>
+        <div id="subExtra"></div>
         <div id="subYears"></div>
         <p class="note">Η επιδότηση υπολογίζεται αυτόματα για κάθε αγροτεμάχιο και χρονιά (στρέμματα × ποσό). Αν καταχωρίσεις πραγματική επιδότηση ως έσοδο, μετράει εκείνη. Το ποσό το βρίσκεις στην πράξη πληρωμής ΟΠΕΚΕΠΕ ή στο ΚΥΔ.</p>
       </div>
@@ -368,13 +370,24 @@ document.addEventListener('keydown',ev=>{if(ev.key!=='Escape'||ev.defaultPrevent
   if(!$('#toast').hidden)$('#toast').hidden=true});
 document.addEventListener('keydown',ev=>{if(ev.key!=='Enter'&&ev.key!==' ')return;const b=ev.target.closest('[role=button][data-act]');if(b&&b===ev.target&&ACTS[b.dataset.act]){ev.preventDefault();ACTS[b.dataset.act](b,b.dataset.arg)}});
 
-const CROPS={olive:{name:'Ελιά',plants:'δέντρα',plant1:'δέντρο'},vine:{name:'Αμπέλι',plants:'κλήματα',plant1:'κλήμα'}};
+// Ελιά and Αμπέλι are built in; «Χωρίς καλλιέργεια» has no plants; crops the user names («Άλλη») live in settings.crops under keys x-….
+const CROPS_BASE={olive:{name:'Ελιά',plants:'δέντρα',plant1:'δέντρο'},vine:{name:'Αμπέλι',plants:'κλήματα',plant1:'κλήμα'},none:{name:'Χωρίς καλλιέργεια',plants:'φυτά',plant1:'φυτό',noPlants:true}};
+const isCustomCrop=c=>typeof c==='string'&&c.startsWith('x-');
+const CROPS=new Proxy(CROPS_BASE,{get:(t,k)=>t[k]??(isCustomCrop(k)?{name:S.settings?.crops?.[k]?.name||'Άλλη καλλιέργεια',plants:'φυτά',plant1:'φυτό',custom:true}:undefined)});
+const cropCls=c=>c==='olive'||c==='vine'||c==='none'?c:'other';
+const cropColor=c=>`var(--${c==='olive'||c==='vine'?c:c==='none'?'muted':'other'})`;
+const customCrops=()=>Object.entries(S.settings?.crops||{}).filter(([k,v])=>isCustomCrop(k)&&v?.name).sort((a,b)=>a[1].name.localeCompare(b[1].name,'el'));
+const cropKeys=()=>['olive','vine',...customCrops().map(([k])=>k),'none'];
+const cropsInUse=()=>cropKeys().filter(c=>[...S.fields.values()].some(f=>f.crop===c));
+const OTHER_TASKS=['Συγκομιδή','Σπορά / φύτευση','Όργωμα / φρεζάρισμα','Χορτοκοπή / ζιζάνια','Λίπανση','Ψεκασμός','Άρδευση','Κλάδεμα','Μεταφορά παραγωγής'];
+const NONE_TASKS=['Κλείσιμο χρονιάς','Χορτοκοπή / ζιζάνια','Όργωμα / φρεζάρισμα','Καθαρισμός','Περίφραξη','Άρδευση'];
+const tasksFor=c=>c==='olive'||c==='vine'?TASKS[c]:c==='none'?NONE_TASKS:OTHER_TASKS;
 const TASKS={
  olive:['Συγκομιδή','Άλεση','Μεταφορά στο ελαιουργείο','Κλάδεμα','Απομάκρυνση / τεμαχισμός κλαδιών','Όργωμα / φρεζάρισμα','Χορτοκοπή / ζιζάνια','Λίπανση εδάφους','Διαφυλλική λίπανση','Ψεκασμός για δάκο','Δακοπαγίδες','Ψεκασμός χαλκού','Άρδευση'],
  vine:['Χειμερινό κλάδεμα','Δέσιμο / υποστύλωση','Βλαστολόγημα','Κορυφολόγημα','Όργωμα / φρεζάρισμα','Χορτοκοπή / ζιζάνια','Λίπανση','Ψεκασμός για περονόσπορο','Θειάφισμα για ωίδιο','Ψεκασμός για βοτρύτη','Άρδευση','Τρύγος','Μεταφορά στο οινοποιείο']};
 document.documentElement.lang='el';
 const COMMON_TASKS=['Επίσκεψη / επιθεώρηση','Ασφάλιση ΕΛΓΑ','Συντήρηση εξοπλισμού'];
-const HARVEST=new Set(['Συγκομιδή','Τρύγος']);
+const HARVEST=new Set(['Συγκομιδή','Τρύγος','Κλείσιμο χρονιάς']);
 const MILL=new Set(['Άλεση']);
 function getTheme(){try{return localStorage.getItem('agrologio-theme')||'light'}catch{return 'light'}}
 function applyTheme(t){const r=document.documentElement,N=window.katastixoNative;
@@ -409,6 +422,7 @@ const INCOME=[
  {id:'oil',name:'Πώληση λαδιού',unit:'κιλά',crop:'olive'},
  {id:'olives',name:'Πώληση ελιάς (καρπού)',unit:'κιλά',crop:'olive'},
  {id:'grapes',name:'Πώληση σταφυλιών',unit:'κιλά',crop:'vine'},
+ {id:'produce',name:'Πώληση παραγωγής',unit:'κιλά',crop:'*'},
  {id:'subsidy',name:'Επιδότηση',unit:'€'},
  {id:'elga',name:'Αποζημίωση ΕΛΓΑ',unit:'€'},
  {id:'other',name:'Λοιπά έσοδα',unit:'€'}];
@@ -418,7 +432,9 @@ const SCOPES={all:'Όλα τα αγροτεμάχια',olive:'Μόνο ελιέ�
 // Subsidy per στρέμμα of a harvest year: its own amount if one is kept for that year, otherwise the current one.
 const subRate=(y,crop)=>{const o=S.settings.subsidyBySeason?.[y]?.[crop];return num(o!=null&&o!==''?o:S.settings.subsidy?.[crop])};
 // Years that are over for a crop (every field of that crop has moved past them): their amount must not move any more.
-const pastYears=crop=>{const open=[...S.fields.keys()].filter(id=>S.fields.get(id).crop===crop).map(id=>openSeason(id));const lo=open.length?Math.min(...open):Infinity;return allSeasons().filter(y=>y<lo)};
+const pastYears=crop=>{const ids=[...S.fields.keys()].filter(id=>S.fields.get(id).crop===crop);const open=ids.map(id=>openSeason(id));const lo=open.length?Math.min(...open):Infinity;
+  const has=new Set();for(const e of S.entries.values()){if(e.kind==='farm'){for(const t of farmTargets(e))if(ids.includes(t.id))has.add(seasonAtDate(t.id,e.date))}else if(ids.includes(e.fieldId)&&e.season)has.add(e.season)}
+  return [...has].filter(y=>y<lo).sort((a,b)=>b-a)};
 const DEFAULT_SETTINGS={hiredDayRate:50,familyDayRate:50,subsidy:{olive:0,vine:0}};
 
 const $=s=>document.querySelector(s);
@@ -451,7 +467,7 @@ function workAmt(e,c=entryCost(e)){if(c>0.004)return `<span class="num neg">−$
 const workAmtTxt=e=>workAmt(e).replace(/<[^>]+>/g,'');
 
 /* ---------- seasons ---------- */
-function defaultSeason(crop,date){const [y,m]=(date||today()).split('-').map(Number);if(crop==='vine')return m>=10?y+1:y;return m<=1?y-1:y}
+function defaultSeason(crop,date){const [y,m]=(date||today()).split('-').map(Number);if(crop==='vine')return m>=10?y+1:y;if(crop==='olive')return m<=1?y-1:y;return y}
 function closedSeasons(fid){return [...S.entries.values()].filter(e=>e.fieldId===fid&&e.kind==='work'&&e.harvestDone).map(e=>e.season)}
 function openSeason(fid,date){const f=S.fields.get(fid);const c=closedSeasons(fid);if(c.length)return Math.max(...c)+1;const used=[...S.entries.values()].filter(e=>e.fieldId===fid&&e.season).map(e=>e.season);return used.length?Math.max(...used):defaultSeason(f?.crop,date)}
 function lastClosed(fid){const c=closedSeasons(fid);return c.length?Math.max(...c):null}
@@ -480,7 +496,7 @@ function stats(){
     if(e.date>s.lastDate)s.lastDate=e.date;
     if(e.kind==='work'){s.works++;for(const l of e.lines||[]){const a=num(l.amount);s.cost+=a;s.byCat[l.cat]=(s.byCat[l.cat]||0)+a;if(l.cat==='family')s.family+=a}
       if(HARVEST.has(e.task)){s.kgFruit+=num(e.kgFruit);s.kgOil+=num(e.kgOil)} if(MILL.has(e.task)){s.mFruit+=num(e.kgFruit);s.mOil+=num(e.kgOil);s.millKept+=num(e.millKeptKg);s.home+=num(e.homeKg);s.stored+=num(e.storedKg)} if(e.harvestDone)s.closed=true}
-    else{const a=num(e.amount);if(e.incomeKind==='subsidy')s.subsidyManual=(s.subsidyManual||0)+a;else if(['oil','olives','grapes'].includes(e.incomeKind)){s.sales+=a;if(e.incomeKind==='oil'){s.oilSoldKg+=num(e.qty);s.oilSoldAmt+=a}}else s.otherInc+=a}
+    else{const a=num(e.amount);if(e.incomeKind==='subsidy')s.subsidyManual=(s.subsidyManual||0)+a;else if(['oil','olives','grapes','produce'].includes(e.incomeKind)){s.sales+=a;if(e.incomeKind==='oil'){s.oilSoldKg+=num(e.qty);s.oilSoldAmt+=a}}else s.otherInc+=a}
   }
   for(const id of S.fields.keys())get(id,openSeason(id));
   for(const s of map.values()){
@@ -502,7 +518,7 @@ function coordsToStr(c){return c.map(p=>p[0].toFixed(6)+','+p[1].toFixed(6)).joi
 function centroid(c){if(!c.length)return null;let x=0,y=0;for(const p of c){x+=p[0];y+=p[1]}return [x/c.length,y/c.length]}
 function areaStr(c){if(c.length<3)return 0;const lat0=centroid(c)[1]*Math.PI/180;const k=111320*Math.cos(lat0);let a=0;for(let i=0;i<c.length;i++){const p=c[i],q=c[(i+1)%c.length];a+=(p[0]*k)*(q[1]*110540)-(q[0]*k)*(p[1]*110540)}return Math.abs(a/2)/1000}
 function fieldPoint(f){const b=parseCoords(f.boundary);if(b.length)return centroid(b);if(f.lat&&f.lon)return [num(f.lon),num(f.lat)];return null}
-function shapeSvg(f){const c=parseCoords(f.boundary);const col=f.crop==='vine'?'var(--vine)':'var(--olive)';
+function shapeSvg(f){const c=parseCoords(f.boundary);const col=cropColor(f.crop);
   if(c.length<3)return `<svg class="shape" viewBox="0 0 56 56" style="color:${col}" aria-hidden="true"><circle cx="28" cy="28" r="5" fill="currentColor"/></svg>`;
   const lat0=Math.cos(centroid(c)[1]*Math.PI/180);const pts=c.map(p=>[p[0]*lat0,-p[1]]);
   const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);const minx=Math.min(...xs),miny=Math.min(...ys),w=Math.max(...xs)-minx||1e-9,h=Math.max(...ys)-miny||1e-9;const sc=44/Math.max(w,h);
@@ -546,12 +562,14 @@ function parseKml(text){const doc=new DOMParser().parseFromString(text,'applicat
   out.lines=lines;return out}
 function buildKml(){const xml=s=>esc(s);
   const pms=[...S.fields.values()].filter(f=>fieldPoint(f)).map(f=>{const c=parseCoords(f.boundary);
-    const desc=`${CROPS[f.crop]?.name||''} · ${nf.format(num(f.stremmata))} στρ. · ${num(f.plants)} ${CROPS[f.crop]?.plants||''}${f.variety?' · '+f.variety:''}`;
+    const desc=`${CROPS[f.crop]?.name||''} · ${nf.format(num(f.stremmata))} στρ.${plantsTxt(f)}${f.variety?' · '+f.variety:''}`;
     const geom=c.length>=3?`<Polygon><outerBoundaryIs><LinearRing><coordinates>${coordsToStr([...c,c[0]])}</coordinates></LinearRing></outerBoundaryIs></Polygon>`:`<Point><coordinates>${fieldPoint(f).join(',')}</coordinates></Point>`;
-    return `<Placemark><name>${xml(f.name)}</name><description>${xml(desc)}</description><styleUrl>#${f.crop}</styleUrl>${geom}</Placemark>`}).join('\n');
+    return `<Placemark><name>${xml(f.name)}</name><description>${xml(desc)}</description><styleUrl>#${cropCls(f.crop)}</styleUrl>${geom}</Placemark>`}).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Αγρολόγιο</name>
 <Style id="olive"><LineStyle><color>ff2a6856</color><width>2</width></LineStyle><PolyStyle><color>662a6856</color></PolyStyle></Style>
 <Style id="vine"><LineStyle><color>ff4f3071</color><width>2</width></LineStyle><PolyStyle><color>664f3071</color></PolyStyle></Style>
+<Style id="other"><LineStyle><color>ff1c5a8a</color><width>2</width></LineStyle><PolyStyle><color>661c5a8a</color></PolyStyle></Style>
+<Style id="none"><LineStyle><color>ff8f8f8f</color><width>2</width></LineStyle><PolyStyle><color>448f8f8f</color></PolyStyle></Style>
 ${pms}</Document></kml>`}
 /* minimal stored ZIP (for KMZ, since .kml cannot be saved directly) */
 const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
@@ -569,7 +587,8 @@ async function saveFile(filename,data){try{const d=await window.claude?.use('dow
 /* ---------- rendering ---------- */
 const fieldsSorted=()=>[...S.fields.entries()].map(([id,f])=>({id,...f})).sort((a,b)=>(a.crop+a.name).localeCompare(b.crop+b.name,'el'));
 const entriesSorted=()=>[...S.entries.entries()].map(([id,e])=>({id,...e})).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||0)-(a.createdAt||0));
-const cropChip=c=>`<span class="chip ${c}"><span class="dot"></span>${CROPS[c]?.name||''}</span>`;
+const plantsTxt=f=>CROPS[f.crop]?.noPlants?'':` · ${num(f.plants)} ${CROPS[f.crop]?.plants||''}`;
+const cropChip=c=>`<span class="chip ${cropCls(c)}"><span class="dot"></span>${CROPS[c]?.name||''}</span>`;
 
 function render(){if(!farmFrozen&&db&&S.loaded.f&&S.loaded.e){farmFrozen=true;freezeFarm()}
   const ready=S.loaded.f&&S.loaded.e&&S.loaded.s;
@@ -597,19 +616,24 @@ function renderHome(){
   const cur=fs.map(f=>({f,s:st.find(x=>x.fieldId===f.id&&x.season===openSeason(f.id)),last:st.find(x=>x.fieldId===f.id&&x.season===lastClosed(f.id))}));
   const totCur=cur.reduce((a,x)=>a+(x.s?.cost||0),0);
   const totLast=cur.reduce((a,x)=>a+(x.last?.net||0),0);const anyLast=cur.some(x=>x.last);
+  const incCur=cur.reduce((a,x)=>a+(x.s?.income||0),0),subEst=cur.reduce((a,x)=>a+(x.s?.subsidyIsEst?x.s.subsidy:0),0);
+  const areaBy=cropKeys().filter(c=>c!=='none').map(c=>[c,fs.filter(f=>f.crop===c).reduce((a,f)=>a+num(f.stremmata),0)]).filter(([,a])=>a>0);
+  const areaAll=areaBy.reduce((a,[,x])=>a+x,0),areaNone=fs.filter(f=>f.crop==='none').reduce((a,f)=>a+num(f.stremmata),0);
   el.innerHTML=`${guideHtml(fs)}
   <div class="grid home-tiles">
     <div class="card"><span class="label">Έξοδα τρέχουσας χρονιάς</span><span class="big">${money(totCur)}</span><span class="note">Όλα τα αγροτεμάχια, από την τελευταία συγκομιδή μέχρι σήμερα</span></div>
+    <div class="card"><span class="label">Έσοδα τρέχουσας χρονιάς</span><span class="big">${money(incCur)}</span><span class="note">Πωλήσεις και λοιπά έσοδα${subEst?` και ${money(subEst)} εκτίμηση επιδότησης`:''}</span></div>
 ${(()=>{const os=st.filter(x=>x.stored);if(!os.length)return '';const tot=r1(os.reduce((a,x)=>a+x.oilStock,0));
       return `<div class="card"><span class="label">Λάδι σε φύλαξη</span><span class="big">${nf.format(tot)} κιλά</span><span class="note">${os.filter(x=>x.oilStock).map(x=>`${esc(S.fields.get(x.fieldId).name)} ${seasonName(x.season,'olive')}: ${nf.format(x.oilStock)} κ.`).join(' · ')||'Πουλήθηκε όλο'}</span>${tot>0?`<div><button type="button" data-act="sellOil" data-arg="${os.find(x=>x.oilStock>0)?.fieldId||''}">Πώληση λαδιού</button></div>`:''}</div>`})()}
     <div class="card"><span class="label">Καθαρό κέρδος τελευταίας συγκομιδής</span><span class="big ${signCls(totLast)}">${anyLast?money(totLast):'–'}</span><span class="note">${anyLast?'Άθροισμα της τελευταίας ολοκληρωμένης χρονιάς κάθε αγροτεμαχίου':'Δεν έχει ολοκληρωθεί ακόμα καμία συγκομιδή'}</span></div>
   </div>
+  <div class="card areas"><span class="label">Έκταση</span><div class="areagrid"><div><span class="big">${nf.format(areaAll)} στρ.</span><span class="note">συνολική καλλιεργήσιμη έκταση${areaNone?` · και ${nf.format(areaNone)} στρ. χωρίς καλλιέργεια`:''}</span></div>${areaBy.map(([c,a])=>`<div>${cropChip(c)}<span class="areanum">${nf.format(a)} στρ.</span></div>`).join('')}</div></div>
   <div class="row" style="justify-content:space-between"><h2>Τα αγροτεμάχια σου</h2><button class="primary" data-act="newEntry">+ Νέα καταχώριση</button></div>
   <div class="grid">${cur.map(({f,s,last})=>`
     <div class="card">
       <div class="row" style="gap:12px;flex-wrap:nowrap">${shapeSvg(f)}<div style="min-width:0"><h3>${esc(f.name)}</h3><div class="row" style="gap:6px;margin-top:4px">${cropChip(f.crop)}${f.example?'<span class="chip ex">παράδειγμα</span>':''}</div></div></div>
       <dl class="kv">
-        <dt>Έκταση</dt><dd>${nf.format(num(f.stremmata))} στρ. · ${num(f.plants)} ${CROPS[f.crop].plants}</dd>
+        <dt>Έκταση</dt><dd>${nf.format(num(f.stremmata))} στρ.${plantsTxt(f)}</dd>
         <dt>Χρονιά ${seasonName(openSeason(f.id),f.crop)}</dt><dd>${money(s?.cost)} έξοδα · ${plural(s?.works||0,'εργασία','εργασίες')}</dd>
         <dt>Προηγ. χρονιά</dt><dd>${last?`<span class="${signCls(last.net)}">${money(last.net)}</span> καθαρό`:'–'}</dd>
       </dl>
@@ -745,7 +769,7 @@ function renderFields(){
       <div class="row" style="gap:12px;flex-wrap:nowrap">${shapeSvg(f)}<div style="min-width:0"><h3>${esc(f.name)}</h3><div class="row" style="gap:6px;margin-top:4px">${cropChip(f.crop)}${f.example?'<span class="chip ex">παράδειγμα</span>':''}</div></div></div>
       <dl class="kv">
         <dt>Στρέμματα</dt><dd>${nf.format(num(f.stremmata))}${c.length>=3?` <span class="note">(χάρτης ≈ ${nf.format(areaStr(c))})</span>`:''}</dd>
-        <dt>${CROPS[f.crop].plants[0].toUpperCase()+CROPS[f.crop].plants.slice(1)}</dt><dd>${num(f.plants)}${num(f.stremmata)?` <span class="note">(${nf.format(num(f.plants)/num(f.stremmata))}/στρ.)</span>`:''}</dd>
+        ${CROPS[f.crop].noPlants?'':`<dt>${CROPS[f.crop].plants[0].toUpperCase()+CROPS[f.crop].plants.slice(1)}</dt><dd>${num(f.plants)}${num(f.stremmata)?` <span class="note">(${nf.format(num(f.plants)/num(f.stremmata))}/στρ.)</span>`:''}</dd>`}
         ${f.variety?`<dt>Ποικιλία</dt><dd>${esc(f.variety)}</dd>`:''}
         <dt>Άρδευση</dt><dd>${f.irrigated?'Ναι':'Όχι'}</dd>
         <dt>Καταχωρίσεις</dt><dd>${n}</dd>
@@ -761,7 +785,8 @@ function openFieldForm(id){
   <form id="fForm">
     <div class="fields">
       <label class="f">Όνομα<input id="fName" required value="${esc(f.name)}" placeholder="π.χ. Κάτω Λάκκα"></label>
-      <label class="f">Καλλιέργεια<select id="fCrop"><option value="olive">Ελιά</option><option value="vine">Αμπέλι</option></select></label>
+      <label class="f">Καλλιέργεια<select id="fCrop">${cropKeys().map(k=>`<option value="${k}">${esc(CROPS[k].name)}</option>`).join('')}<option value="__new">Άλλη (γράψε ποια)…</option></select></label>
+      <label class="f" id="fCropNewL" hidden>Ποια καλλιέργεια<input id="fCropNew" placeholder="π.χ. Αμυγδαλιά, Πορτοκαλιά, Σιτάρι" autocomplete="off"></label>
       <label class="f">Στρέμματα<input id="fStr" type="number" min="0" step="any" inputmode="decimal" required value="${esc(f.stremmata??'')}"></label>
       <label class="f" id="fPlantsL">Αριθμός δέντρων<input id="fPlants" type="number" min="0" step="1" inputmode="numeric" value="${esc(f.plants??'')}"></label>
       <label class="f">Ποικιλία<input id="fVar" value="${esc(f.variety)}" placeholder="π.χ. Κορωνέικη"></label>
@@ -773,7 +798,8 @@ function openFieldForm(id){
     <div class="row"><button class="primary" type="submit">Αποθήκευση</button><button type="button" id="fCancel">Ακύρωση</button>${id?'<button type="button" class="danger" id="fDel">Διαγραφή</button>':''}</div>
   </form>`;
   $('#fCrop').value=f.crop||'olive';
-  const setPl=()=>$('#fPlantsL').firstChild.textContent=$('#fCrop').value==='vine'?'Αριθμός κλιμάτων':'Αριθμός δέντρων';setPl();$('#fCrop').onchange=setPl;
+  const setPl=()=>{const c=$('#fCrop').value;$('#fCropNewL').hidden=c!=='__new';if(c==='__new')$('#fCropNew').focus();$('#fPlantsL').hidden=c==='none';
+    $('#fPlantsL').firstChild.textContent=c==='vine'?'Αριθμός κλιμάτων':c==='olive'?'Αριθμός δέντρων':'Αριθμός φυτών / δέντρων'};setPl();$('#fCrop').onchange=setPl;
   $('#fCancel').onclick=()=>{card.hidden=true};
   let dropB=false;if($('#fDropB'))$('#fDropB').onclick=e=>{dropB=true;e.target.parentElement.textContent='Το όριο θα αφαιρεθεί με την αποθήκευση.'};
   // Deleting a field takes its entries with it (one confirmation, with undo).
@@ -785,7 +811,11 @@ function openFieldForm(id){
     catch(err){toast('Δεν διαγράφηκε: '+(err.message||err.code));e.target.disabled=false}};
   $('#fForm').onsubmit=async ev=>{ev.preventDefault();
     if(num($('#fStr').value)<0||num($('#fPlants').value)<0){toast('Οι αριθμοί δεν μπορεί να είναι αρνητικοί');return}
-    const d={name:$('#fName').value.trim(),crop:$('#fCrop').value,stremmata:num($('#fStr').value),plants:Math.round(num($('#fPlants').value)),variety:$('#fVar').value.trim(),irrigated:$('#fIrr').checked,notes:$('#fNote').value.trim(),boundary:dropB?'':(f.boundary||''),example:!!f.example,updatedAt:Date.now()};
+    let crop=$('#fCrop').value;
+    if(crop==='__new'){const nm=$('#fCropNew').value.trim().replace(/\s+/g,' ');if(!nm){toast('Γράψε ποια καλλιέργεια είναι');$('#fCropNew').focus();return}
+      const same=Object.entries(CROPS_BASE).concat(customCrops()).find(([,v])=>normWord(v.name)===normWord(nm));
+      if(same)crop=same[0];else{crop='x-'+Date.now().toString(36);try{await db.doc('settings/main').set({...S.settings,crops:{...(S.settings.crops||{}),[crop]:{name:nm[0].toLocaleUpperCase('el')+nm.slice(1)}}})}catch(e){toast('Δεν αποθηκεύτηκε η καλλιέργεια: '+(e.message||e.code));return}}}
+    const d={name:$('#fName').value.trim(),crop,stremmata:num($('#fStr').value),plants:crop==='none'?0:Math.round(num($('#fPlants').value)),variety:$('#fVar').value.trim(),irrigated:$('#fIrr').checked,notes:$('#fNote').value.trim(),boundary:dropB?'':(f.boundary||''),example:!!f.example,updatedAt:Date.now()};
     const ll=$('#fLatLon').value.split(/[,\s]+/).map(Number).filter(isFinite);if(!d.boundary&&ll.length===2){d.lat=ll[0];d.lon=ll[1]}else{d.lat=null;d.lon=null}
     try{if(id)await db.doc('fields/'+id).set(d);else await db.collection('fields').add({...d,createdAt:Date.now()});card.hidden=true;toast('Αποθηκεύτηκε')}catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code))}};
   card.scrollIntoView({behavior:'smooth',block:'start'});
@@ -799,27 +829,38 @@ async function handleKml(file){
   try{const pms=parseKml(await readKmlFile(file));if(!pms.length)throw new Error('Δεν βρέθηκαν σημεία ή περιγράμματα στο αρχείο.');kmlPending=pms}
   catch(e){kmlPending=[];box.hidden=false;box.innerHTML=`<p class="neg">${esc(e.message)}</p><div><button data-act="hideCard">Κλείσιμο</button></div>`;return}
   const fs=fieldsSorted();box.hidden=false;
-  box.innerHTML=`<h2>Εισαγωγή από ${esc(file.name)}</h2><p class="note">Διάλεξε για κάθε σχήμα αν είναι νέο αγροτεμάχιο ή ανήκει σε υπάρχον. Τα στρέμματα υπολογίζονται από τον χάρτη, μπορείς να τα αλλάξεις μετά.</p>
-  <div class="stack">${kmlPending.map((p,i)=>`<div class="row" style="flex-wrap:nowrap;gap:12px">${shapeSvg({boundary:coordsToStr(p.coords),crop:'olive'})}
-    <div class="stack" style="gap:6px;flex:1;min-width:0"><b>${esc(p.name)}</b><span class="note">${p.coords.length>=3?`≈ ${nf.format(areaStr(p.coords))} στρ.`:'Σημείο'}</span>
-    ${p.pieces>1?`<span class="note">Το αρχείο έχει ${p.pieces} κομμάτια· κρατήθηκε το μεγαλύτερο.</span>`:''}${p.coords.length<3&&kmDefault(p,fs)!=='skip'&&!kmDefault(p,fs).startsWith('new-')&&parseCoords(S.fields.get(kmDefault(p,fs))?.boundary).length>=3?'<span class="note">Το υπάρχον όριο μένει· κρατιέται μόνο αν δεν έχει όριο.</span>':''}
-    <div class="fields"><select id="km${i}"><option value="new-olive">Νέο αγροτεμάχιο · Ελιά</option><option value="new-vine">Νέο αγροτεμάχιο · Αμπέλι</option>${fs.map(f=>`<option value="${f.id}">→ ${esc(f.name)}</option>`).join('')}<option value="skip">Παράλειψη</option></select></div></div></div>`).join('')}</div>${kmlPending.lines?`<p class="note">${kmlPending.lines===1?'Μία γραμμή (π.χ. δρόμος) δεν εισάγεται':kmlPending.lines+' γραμμές (π.χ. δρόμοι) δεν εισάγονται'}, γιατί δεν είναι αγροτεμάχια.</p>`:''}
-  <div class="row"><button class="primary" id="kmGo">Εισαγωγή</button><button data-act="hideCard">Ακύρωση</button></div>`;
-  kmlPending.forEach((p,i)=>{$('#km'+i).value=kmDefault(p,fs)});
+  // A shape that already sits on its field unchanged is left out of the list, so only what is new or changed shows.
+  const same=(p,id)=>{const f=S.fields.get(id);if(!f)return false;if(p.coords.length>=3){const c=parseCoords(f.boundary);return c.length===p.coords.length&&c.every((q,j)=>Math.abs(q[0]-p.coords[j][0])<1e-5&&Math.abs(q[1]-p.coords[j][1])<1e-5)}
+    return parseCoords(f.boundary).length>=3||(Math.abs(num(f.lat)-p.coords[0][1])<1e-6&&Math.abs(num(f.lon)-p.coords[0][0])<1e-6)};
+  const def=kmlPending.map(p=>kmDefault(p,fs));const known=kmlPending.map((p,i)=>!def[i].startsWith('new-')&&same(p,def[i]));
+  const nKnown=known.filter(Boolean).length,nShow=kmlPending.length-nKnown;
+  const opts=`${cropKeys().map(c=>`<option value="new-${c}">Νέο αγροτεμάχιο · ${esc(CROPS[c].name)}</option>`).join('')}${fs.map(f=>`<option value="${f.id}">→ ${esc(f.name)}</option>`).join('')}<option value="skip">Παράλειψη</option>`;
+  const row=(p,i)=>`<div class="row kmrow" style="flex-wrap:nowrap;gap:12px" ${known[i]?'data-known hidden':''}>${shapeSvg({boundary:coordsToStr(p.coords),crop:'olive'})}
+    <div class="stack" style="gap:6px;flex:1;min-width:0"><b>${esc(p.name)}</b><span class="note">${p.coords.length>=3?`≈ ${nf.format(areaStr(p.coords))} στρ.`:'Σημείο'}${known[i]?' · υπάρχει ήδη χωρίς αλλαγές':!def[i].startsWith('new-')?' · νέο όριο για υπάρχον αγροτεμάχιο':''}</span>
+    ${p.pieces>1?`<span class="note">Το αρχείο έχει ${p.pieces} κομμάτια· κρατήθηκε το μεγαλύτερο.</span>`:''}${p.coords.length<3&&!def[i].startsWith('new-')&&parseCoords(S.fields.get(def[i])?.boundary).length>=3?'<span class="note">Το υπάρχον όριο μένει· κρατιέται μόνο αν δεν έχει όριο.</span>':''}
+    <div class="fields"><select id="km${i}">${opts}</select></div></div></div>`;
+  box.innerHTML=`<h2>Εισαγωγή από ${esc(file.name)}</h2>
+  <p class="note">${nShow?'Διάλεξε για κάθε σχήμα αν είναι νέο αγροτεμάχιο ή ανήκει σε υπάρχον. Τα στρέμματα υπολογίζονται από τον χάρτη, μπορείς να τα αλλάξεις μετά.':'Δεν βρέθηκε κάτι νέο: όλα τα σχήματα του αρχείου υπάρχουν ήδη στην εφαρμογή.'}</p>
+  <div class="stack">${kmlPending.map(row).join('')}</div>
+  ${nKnown?`<p class="note" id="kmKnown">${nKnown===1?'1 σχήμα υπάρχει':nKnown+' σχήματα υπάρχουν'} ήδη στην εφαρμογή χωρίς αλλαγές και ${nKnown===1?'παραλείπεται':'παραλείπονται'}. <button type="button" class="ghost" id="kmShow">Εμφάνιση</button></p>`:''}
+  ${kmlPending.lines?`<p class="note">${kmlPending.lines===1?'Μία γραμμή (π.χ. δρόμος) δεν εισάγεται':kmlPending.lines+' γραμμές (π.χ. δρόμοι) δεν εισάγονται'}, γιατί δεν είναι αγροτεμάχια.</p>`:''}
+  <div class="row">${nShow?'<button class="primary" id="kmGo">Εισαγωγή</button><button data-act="hideCard">Ακύρωση</button>':'<button class="primary" id="kmGo" hidden>Εισαγωγή</button><button data-act="hideCard">Κλείσιμο</button>'}</div>`;
+  kmlPending.forEach((p,i)=>{$('#km'+i).value=known[i]?'skip':def[i]});
+  if($('#kmShow'))$('#kmShow').onclick=()=>{box.querySelectorAll('[data-known]').forEach(r=>r.hidden=false);$('#kmKnown').hidden=true;$('#kmGo').hidden=false};
   $('#kmGo').onclick=async()=>{let n=0;const ops=[];for(const [i,p] of kmlPending.entries()){const v=$('#km'+i).value;if(v==='skip')continue;
       const geo=p.coords.length>=3?{boundary:coordsToStr(p.coords),lat:null,lon:null}:{boundary:'',lat:p.coords[0][1],lon:p.coords[0][0]};
       if(v.startsWith('new-'))ops.push({c:'fields',id:null,data:{name:p.name,crop:v.slice(4),stremmata:p.coords.length>=3?Math.round(areaStr(p.coords)*10)/10:0,plants:0,variety:'',irrigated:false,notes:'',...geo,createdAt:Date.now()}});
       else{const f=S.fields.get(v);if(p.coords.length<3&&parseCoords(f?.boundary).length>=3)continue; // a point never wipes an existing boundary
         ops.push({c:'fields',id:v,data:{...f,...geo}})}n++}
     $('#kmGo').disabled=true;$('#kmGo').textContent='Εισαγωγή…';try{await writeMany(ops)}catch(e){toast('Η εισαγωγή σταμάτησε: '+(e.message||e.code));$('#kmGo').disabled=false;$('#kmGo').textContent='Εισαγωγή';return}
-    box.hidden=true;toast(n===1?'Εισήχθη 1 αγροτεμάχιο ή όριο':`Εισήχθησαν ${n} αγροτεμάχια ή όρια`)};
+    box.hidden=true;toast(!n?'Δεν άλλαξε τίποτα':n===1?'Εισήχθη 1 αγροτεμάχιο ή όριο':`Εισήχθησαν ${n} αγροτεμάχια ή όρια`)};
 }
 
 // «Σύγκριση χρονιών»: one small chart per field, net profit per στρέμμα of each year (last 6), so good and bad years stand out.
 function compareHtml(){const all=stats();const cards=fieldsSorted().map(f=>{const ss=all.filter(s=>s.fieldId===f.id).sort((a,b)=>a.season-b.season).slice(-6);if(ss.length<2)return '';
     const perStr=!!num(f.stremmata);const v=ss.map(s=>perStr?s.perStr:s.net);const max=Math.max(0,...v),min=Math.min(0,...v),span=(max-min)||1;
     const W=300,H=164,top=22,bot=38,ph=H-top-bot,bw=Math.min(40,(W-20)/ss.length-10),gap=(W-ss.length*bw)/(ss.length+1),y0=top+max/span*ph;
-    const col=f.crop==='vine'?'var(--vine)':'var(--olive)';const fmt=x=>perStr?eur.format(x):money(x);
+    const col=cropColor(f.crop);const fmt=x=>perStr?eur.format(x):money(x);
     const bars=ss.map((s,i)=>{const x=gap+i*(bw+gap),h=Math.abs(v[i])/span*ph,y=v[i]>=0?y0-h:y0,r=Math.min(4,h/2);
       const d=v[i]>=0?`M${x},${y0}V${y+r}Q${x},${y} ${x+r},${y}H${x+bw-r}Q${x+bw},${y} ${x+bw},${y+r}V${y0}Z`:`M${x},${y0}V${y+h-r}Q${x},${y+h} ${x+r},${y+h}H${x+bw-r}Q${x+bw},${y+h} ${x+bw},${y+h-r}V${y0}Z`;
       const ly=v[i]>=0?y-5:y+h+12;const name=seasonName(s.season,f.crop);
@@ -864,8 +905,11 @@ function renderReports(){
   labelCells(el);
 }
 
-function renderSettings(){if(document.activeElement?.closest('#setForm'))return;const s=S.settings;$('#sHired').value=s.hiredDayRate??'';$('#sFamily').value=s.familyDayRate??'';$('#sSubOlive').value=s.subsidy?.olive??'';$('#sSubVine').value=s.subsidy?.vine??'';$('#sMillPct').value=s.millPct||'';renderSubYears()}
-function renderSubYears(){const box=$('#subYears');const crops=['olive','vine'].filter(c=>[...S.fields.values()].some(f=>f.crop===c));
+function renderSettings(){if(document.activeElement?.closest('#setForm'))return;const s=S.settings;$('#sHired').value=s.hiredDayRate??'';$('#sFamily').value=s.familyDayRate??'';$('#sSubOlive').value=s.subsidy?.olive??'';$('#sSubVine').value=s.subsidy?.vine??'';renderSubExtra();$('#sMillPct').value=s.millPct||'';renderSubYears()}
+// Subsidy rows for crops other than olive/vine that have fields.
+function renderSubExtra(){const box=$('#subExtra');const cs=cropsInUse().filter(c=>c!=='olive'&&c!=='vine');
+  box.innerHTML=cs.map(c=>`<label class="setrow" for="sSub-${c}"><span><b>${esc(CROPS[c].name)}</b><small>Ανά στρέμμα, για τη χρονιά σε εξέλιξη</small></span><span class="unit"><input id="sSub-${c}" class="subC" data-c="${c}" type="number" min="0" step="any" inputmode="decimal" value="${esc(S.settings.subsidy?.[c]??'')}"><i>€ / στρ.</i></span></label>`).join('')}
+function renderSubYears(){const box=$('#subYears');const crops=cropsInUse();
   const ys=[...new Set(crops.flatMap(pastYears))].sort((a,b)=>b-a);
   if(!ys.length){box.innerHTML='';return}
   box.innerHTML=`<p class="note" style="margin:0;padding:10px 14px;border-top:1px solid var(--line)"><b>Ολοκληρωμένες χρονιές.</b> Κάθε χρονιά κρατά το δικό της ποσό, ώστε η αλλαγή του ποσού πάνω να μην αλλάζει τα παλιά καθαρά.</p>`+
@@ -907,17 +951,17 @@ function syncEntryForm(resetSeason){
   let want=editing&&!resetSeason?editing.season:(seasonTouched&&cur?cur:autoSeason(fid));
   if(![...$('#eSeason').options].some(o=>+o.value===want))$('#eSeason').innerHTML=seasonOptions(fid,want);
   $('#eSeason').value=want;
-  const tv=$('#eTask').value;const tasks=[...TASKS[f.crop],...COMMON_TASKS];
+  const tv=$('#eTask').value;const tasks=[...tasksFor(f.crop),...COMMON_TASKS];
   $('#eTask').innerHTML=tasks.map(t=>`<option>${esc(t)}</option>`).join('')+'<option value="__other">Άλλη εργασία…</option>';
   if(tasks.includes(tv)||tv==='__other')$('#eTask').value=tv;
   syncTask();
-  const iv=$('#iKind').value;const kinds=INCOME.filter(i=>!i.crop||i.crop===f.crop);$('#iKind').innerHTML=kinds.map(i=>`<option value="${i.id}">${i.name}</option>`).join('');if(kinds.some(k=>k.id===iv))$('#iKind').value=iv;syncIncome();
+  const iv=$('#iKind').value;const kinds=INCOME.filter(i=>!i.crop||i.crop===f.crop||(i.crop==='*'&&cropCls(f.crop)==='other'));$('#iKind').innerHTML=kinds.map(i=>`<option value="${i.id}">${i.name}</option>`).join('');if(kinds.some(k=>k.id===iv))$('#iKind').value=iv;syncIncome();
   $('#eKgOilWrap').hidden=f.crop!=='olive';refreshLineCats();
 }
 const allowedCats=()=>$('#eField').value===FARM?CATS:CATS.filter(c=>!c.farmOnly);
 const defaultLine=()=>({cat:$('#eField').value===FARM?'diesel':'labor'});
 function refreshLineCats(){const al=allowedCats();[...$('#eLines').children].forEach(el=>{const sel=el.querySelector('.lc');const v=sel.value;sel.innerHTML=al.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');if(al.some(c=>c.id===v))sel.value=v;else{sel.value=al[0].id;sel.onchange({target:sel})}})}
-function syncTask(){const t=$('#eTask').value;$('#eTaskOtherWrap').hidden=t!=='__other';$('#harvestPart').hidden=!HARVEST.has(t);
+function syncTask(){const t=$('#eTask').value;$('#eTaskOtherWrap').hidden=t!=='__other';$('#harvestPart').hidden=!HARVEST.has(t);$('#eKgWrap').hidden=t==='Κλείσιμο χρονιάς';
   const m=MILL.has(t)&&$('#eField').value!==FARM;const was=!$('#millPart').hidden;$('#millPart').hidden=!m;$('#eCostBlock').hidden=m;
   {const fid=$('#eField').value;if(!editing&&!seasonTouched&&S.fields.has(fid)){const w=autoSeason(fid);if(![...$('#eSeason').options].some(o=>+o.value===w))$('#eSeason').innerHTML=seasonOptions(fid,w);$('#eSeason').value=w;incomeHint()}}
   if(m)syncMill();syncMulti()}
@@ -976,7 +1020,7 @@ function editEntry(id){let e=S.entries.get(id);if(!e)return;if(e.task==='Μετ�
   $('#kindWork').setAttribute('aria-pressed',kind==='work');$('#kindIncome').setAttribute('aria-pressed',kind==='income');$('#workPart').hidden=kind!=='work';$('#incomePart').hidden=kind!=='income';
   syncEntryForm(false);
   if(e.kind==='farm'){$('#eScope').value=e.scope||'all';const ft=['Αγορά πετρελαίου','Άλλο κοινό έξοδο'];$('#eTask').value=ft.includes(e.task)?e.task:'__other';$('#eTaskOther').value=ft.includes(e.task)?'':e.task;syncTask();$('#eLines').innerHTML='';(e.lines?.length?e.lines:[{cat:'diesel'}]).forEach(addLine)}
-  else if(e.kind==='work'){const f=S.fields.get(e.fieldId);const known=[...TASKS[f.crop],...COMMON_TASKS].includes(e.task);$('#eTask').value=known?e.task:'__other';$('#eTaskOther').value=known?'':e.task;syncTask();
+  else if(e.kind==='work'){const f=S.fields.get(e.fieldId);const known=[...tasksFor(f.crop),...COMMON_TASKS].includes(e.task);$('#eTask').value=known?e.task:'__other';$('#eTaskOther').value=known?'':e.task;syncTask();
     $('#eLines').innerHTML='';(e.lines?.length?e.lines:[{}]).forEach(addLine);$('#eKgFruit').value=e.kgFruit||'';$('#eKgOil').value=e.kgOil||'';$('#eHarvestDone').checked=!!e.harvestDone;
     $('#mKgFruit').value=MILL.has(e.task)?e.kgFruit||'':'';$('#mKgOil').value=MILL.has(e.task)?e.kgOil||'':'';$('#mKept').value=e.millKeptKg||'';$('#mHome').value=e.homeKg||'';syncTask()}
   else{$('#iKind').value=e.incomeKind;$('#iQty').value=e.qty||'';$('#iPrice').value=e.price||'';$('#iAmount').value=e.amount||'';incomeLead='amount';syncIncome()}
@@ -1089,7 +1133,7 @@ async function exportPdf(){
   const fs=fieldsSorted().filter(f=>st.some(s=>s.fieldId===f.id));
   if(!fs.length){toast('Δεν υπάρχουν στοιχεία για αυτή τη χρονιά');return}
   fs.forEach((f,fi)=>{if(fi)doc.addPage('a4','portrait');
-    header(f.name,`${CROPS[f.crop].name} · ${nf.format(num(f.stremmata))} στρέμματα · ${num(f.plants)} ${CROPS[f.crop].plants}${f.variety?' · '+f.variety:''} · ${f.irrigated?'Αρδευόμενο':'Ξερικό'}`);
+    header(f.name,`${CROPS[f.crop].name} · ${nf.format(num(f.stremmata))} στρέμματα${plantsTxt(f)}${f.variety?' · '+f.variety:''} · ${f.irrigated?'Αρδευόμενο':'Ξερικό'}`);
     let y=30;
     for(const s of st.filter(x=>x.fieldId===f.id)){
       if(y>200){doc.addPage('a4','portrait');y=18} // a year's summary is not split across pages
@@ -1170,12 +1214,12 @@ $('#themeBtn').onclick=()=>{const dark=document.documentElement.dataset.theme===
 $('#sTheme').value=getTheme();$('#sTheme').onchange=e=>{const t=e.target.value;try{localStorage.setItem('agrologio-theme',t)}catch{}applyTheme(t)};
 $('#sSize').value=getSize();$('#sSize').onchange=e=>{const v=e.target.value;try{localStorage.setItem('agrologio-size',v)}catch{}applySize(v)};
 $('#setForm').addEventListener('input',e=>{if(e.target.id!=='sTheme'&&e.target.id!=='sSize')$('#setDirty').hidden=false});
-$('#setForm').onsubmit=async e=>{e.preventDefault();const d={hiredDayRate:num($('#sHired').value),familyDayRate:num($('#sFamily').value),subsidy:{olive:num($('#sSubOlive').value),vine:num($('#sSubVine').value)},millPct:num($('#sMillPct').value)};
+$('#setForm').onsubmit=async e=>{e.preventDefault();const d={hiredDayRate:num($('#sHired').value),familyDayRate:num($('#sFamily').value),subsidy:{...(S.settings.subsidy||{}),olive:num($('#sSubOlive').value),vine:num($('#sSubVine').value),...Object.fromEntries([...document.querySelectorAll('#subExtra .subC')].map(i=>[i.dataset.c,num(i.value)]))},millPct:num($('#sMillPct').value)};
   if(d.millPct<0||d.millPct>=100){toast('Το ποσοστό του ελαιουργείου πρέπει να είναι από 0 έως 99 %');$('#sMillPct').focus();return}
-  if([d.hiredDayRate,d.familyDayRate,d.subsidy.olive,d.subsidy.vine].some(v=>v<0)){toast('Οι αριθμοί δεν μπορεί να είναι αρνητικοί');return}
+  if([d.hiredDayRate,d.familyDayRate,...Object.values(d.subsidy)].some(v=>v<0)){toast('Οι αριθμοί δεν μπορεί να είναι αρνητικοί');return}
   // Past years keep the amount they had: changing the current amount writes the old one into each finished year first.
   const by=JSON.parse(JSON.stringify(S.settings.subsidyBySeason||{}));
-  for(const c of ['olive','vine']){const old=num(S.settings.subsidy?.[c]);if(old!==d.subsidy[c])for(const y of pastYears(c))if(by[y]?.[c]==null)(by[y]??={})[c]=old}
+  for(const c of cropsInUse()){const old=num(S.settings.subsidy?.[c]);if(old!==d.subsidy[c])for(const y of pastYears(c))if(by[y]?.[c]==null)(by[y]??={})[c]=old}
   for(const i of document.querySelectorAll('#subYears .subY')){const v=num(i.value);if(v<0){toast('Οι αριθμοί δεν μπορεί να είναι αρνητικοί');i.focus();return}(by[i.dataset.y]??={})[i.dataset.c]=v}
   d.subsidyBySeason=by;
   try{await db.doc('settings/main').set({...S.settings,...d});$('#setDirty').hidden=true;document.activeElement.blur();toast('Οι ρυθμίσεις αποθηκεύτηκαν')}catch(err){toast('Δεν αποθηκεύτηκαν: '+(err.message||err.code))}};
@@ -1196,7 +1240,7 @@ async function exportBackup(){const o={app:'katastixo',version:1,exportedAt:new 
   const ok=await saveFile(`Agrologio_antigrafo_${today()}.json`,JSON.stringify(o,null,1));if(ok)toast('Το αντίγραφο αποθηκεύτηκε');return ok}
 // Records that the app can show safely. Anything else is skipped (on import) or ignored (on load), so a bad record cannot lock the app.
 const isDate=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d);
-const validField=f=>!!f&&typeof f==='object'&&!Array.isArray(f)&&typeof f.name==='string'&&!!CROPS[f.crop];
+const validField=f=>!!f&&typeof f==='object'&&!Array.isArray(f)&&typeof f.name==='string'&&(!!CROPS_BASE[f.crop]||isCustomCrop(f.crop));
 const validEntry=(e,fieldIds)=>!!e&&typeof e==='object'&&!Array.isArray(e)&&isDate(e.date)&&(e.kind==='farm'?Array.isArray(e.lines):(['work','income'].includes(e.kind)&&fieldIds.has(e.fieldId)&&Number.isFinite(+e.season)));
 async function importBackup(file){const box=$('#bkConfirm');let o;
   try{o=JSON.parse(await file.text());if(!o||o.app!=='katastixo'||typeof o.fields!=='object'||typeof o.entries!=='object'||!o.fields||!o.entries)throw 0}catch{box.hidden=false;box.innerHTML='<span class="neg">Το αρχείο δεν είναι αντίγραφο του Αγρολογίου.</span>';return}
