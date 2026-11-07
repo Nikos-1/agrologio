@@ -81,7 +81,7 @@ textarea{min-height:60px;resize:vertical}
 ol.steps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}ol.steps li{display:flex;gap:12px;align-items:flex-start}ol.steps li p{margin:2px 0 8px}ol.steps li.done{opacity:.7}.stepn{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--sunk);color:var(--muted)}li.now .stepn{background:var(--accent);color:var(--accent-ink)}li.done .stepn{color:var(--good)}
 #lmap{height:clamp(420px,62vh,640px);border-radius:var(--r);background:var(--sunk);z-index:0}@media (max-width:700px){#lmap{height:320px}}
 .lmlbl{background:rgba(18,22,14,.82);color:#fff;border:0;border-radius:6px;box-shadow:none;font:600 12px var(--f-body);padding:3px 7px;text-align:center;line-height:1.3}.lmlbl::before{display:none}.lmlbl small{display:block;font-weight:500;opacity:.85}
-.leaflet-container{font:12px var(--f-body)}.leaflet-control-layers label{padding:2px 0;color:#222}.leaflet-control-layers label>span{display:flex;gap:6px;align-items:center}.leaflet-control-layers input{width:auto;min-height:0;margin:0;padding:0}.leaflet-control-layers-list,.leaflet-control-layers-expanded{max-height:none!important;overflow:visible!important;padding-right:10px}
+.leaflet-container{font:12px var(--f-body)}.lmall{background:#fff;color:#222;border:2px solid rgba(0,0,0,.2);border-radius:4px;font:700 13px var(--f-body);padding:5px 9px;min-height:0;cursor:pointer;box-shadow:none}.lmall:hover{background:#f4f4f4}.leaflet-control-layers label{padding:2px 0;color:#222}.leaflet-control-layers label>span{display:flex;gap:6px;align-items:center}.leaflet-control-layers input{width:auto;min-height:0;margin:0;padding:0}.leaflet-control-layers-list,.leaflet-control-layers-expanded{max-height:none!important;overflow:visible!important;padding-right:10px}
 svg.fmap{width:100%;height:auto;display:block;margin:8px 0;background:var(--sunk);border-radius:var(--r)}svg.fmap .fm{cursor:pointer}svg.fmap .fm:hover path,svg.fmap .fm:hover circle,svg.fmap .fm:focus path,svg.fmap .fm:focus circle{stroke-width:3}svg.fmap .fm:focus{outline:none}svg.fmap .fmname{font:600 12px var(--f-body);fill:var(--ink);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}svg.fmap .fmval{font:500 11px var(--f-body);fill:var(--muted);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}
 svg.cmp{width:100%;height:auto;display:block;margin:6px 0}svg.cmp .cbase{stroke:var(--field-line);stroke-width:1}svg.cmp .cval{font:600 11px var(--f-body);fill:var(--ink)}svg.cmp .clab{font:500 10.5px var(--f-body);fill:var(--muted)}svg.cmp .cbar:hover path{filter:brightness(1.15)}
 .note.warn{color:var(--warn);font-weight:600}
@@ -358,7 +358,7 @@ const PDF_FONT_BOLD="AAEAAAAOAIAAAwBgR0RFRgQQBEYAAGX8AAAAKEdQT1NEdkx1AABmJAAAACB
 
 <script>
 // Buttons inside generated HTML say what they do with data-act (no inline handlers, so the desktop page can forbid inline scripts).
-const ACTS={goTab:(b,a)=>go(a),guideOff:()=>{try{localStorage.setItem('agrologio-guide-off','1')}catch{}renderHome()},addField:()=>{go('fields');openFieldForm()},hideCard:b=>{b.closest('.card').hidden=true},newEntry:(b,a)=>newEntry(a||undefined),logFor:(b,a)=>logFor(a),openFieldForm:(b,a)=>openFieldForm(a||undefined),editEntry:(b,a)=>editEntry(a),sellOil:(b,a)=>{newEntry(a||undefined);setKind('income');$('#iKind').value='oil';syncIncome();$('#iQty').focus()}};
+const ACTS={mapZoom:(b,a)=>mapZoom(a),goTab:(b,a)=>go(a),guideOff:()=>{try{localStorage.setItem('agrologio-guide-off','1')}catch{}renderHome()},addField:()=>{go('fields');openFieldForm()},hideCard:b=>{b.closest('.card').hidden=true},newEntry:(b,a)=>newEntry(a||undefined),logFor:(b,a)=>logFor(a),openFieldForm:(b,a)=>openFieldForm(a||undefined),editEntry:(b,a)=>editEntry(a),sellOil:(b,a)=>{newEntry(a||undefined);setKind('income');$('#iKind').value='oil';syncIncome();$('#iQty').focus()}};
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-act]');if(b&&ACTS[b.dataset.act])ACTS[b.dataset.act](b,b.dataset.arg)});
 document.addEventListener('keydown',ev=>{if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches?.('svg [data-act]')){ev.preventDefault();ev.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
 // Esc closes the open box (line editor, field form, import or delete boxes).
@@ -682,7 +682,7 @@ function renderLog(){
 
 // All fields on one drawing, coloured by profit per στρέμμα of each field's last finished year (or the current one if none is finished).
 // Windows program with internet: a real map (satellite with roads and place names, or a street map). Otherwise the drawing below.
-let lmap=null,lmapLayer=null,lmapKey='',lmapFail=0,lmapOk=0,lmapOff=false;
+let lmapById=new Map(),lmap=null,lmapLayer=null,lmapKey='',lmapFail=0,lmapOk=0,lmapOff=false;
 const liveMapOk=()=>!!(window.L&&window.katastixoNative&&navigator.onLine&&!lmapOff);
 addEventListener('online',()=>{lmapOff=false;lmapFail=0;renderFields()});addEventListener('offline',()=>{lmapOff=true;renderFields()});
 function renderLiveMap(box,items,missing){const css=getComputedStyle(document.documentElement),cv=n=>css.getPropertyValue(n).trim();
@@ -694,27 +694,32 @@ function renderLiveMap(box,items,missing){const css=getComputedStyle(document.do
     lmap=L.map('lmap',{attributionControl:true});lmap.attributionControl.setPrefix(false);
     let pick='sat';try{pick=localStorage.getItem('agrologio-map')||'sat'}catch{}(pick==='str'?str:sat).addTo(lmap);
     L.control.layers({'Δορυφόρος':sat,'Δρόμοι':str},null,{collapsed:false,position:'topright'}).addTo(lmap);
+    const All=L.Control.extend({onAdd(){const b=L.DomUtil.create('button','lmall');b.type='button';b.textContent='Όλα';b.title='Δείξε όλα τα αγροτεμάχια';L.DomEvent.disableClickPropagation(b);b.onclick=()=>mapFitAll(true);return b}});new All({position:'topleft'}).addTo(lmap);
     lmap.on('baselayerchange',e=>{try{localStorage.setItem('agrologio-map',e.layer===str?'str':'sat')}catch{}});
     // No tile reaches us (offline, firewall): fall back to the drawing.
     lmapLayer=L.featureGroup().addTo(lmap);lmapKey=''}
-  lmapLayer.clearLayers();const max=Math.max(1,...items.map(it=>Math.abs(it.v)));
+  lmapLayer.clearLayers();lmapById.clear();const max=Math.max(1,...items.map(it=>Math.abs(it.v)));
   for(const it of items){const empty=!it.s||(!it.s.cost&&!it.s.sales&&!it.s.otherInc&&it.s.subsidyManual==null);
-    const col=empty?'#9aa391':cv(it.v>=0?'--good':'--bad');const op=empty?0.25:0.35+0.45*Math.abs(it.v)/max;
+    const col=empty?'#9aa391':cv(it.v>=0?'--good':'--bad');const op=empty?0.15:0.25+0.35*Math.abs(it.v)/max;
     const val=empty?'χωρίς καταχωρίσεις':it.perStr?eur.format(it.v)+' /στρ.':money(it.v);const yr=it.s&&!empty?' · '+seasonName(it.s.season,it.f.crop)+(it.s.closed?'':' (σε εξέλιξη)'):'';
     const st={color:'#ffffff',weight:2,fillColor:col,fillOpacity:op};
     const g=it.c?L.polygon(it.c.map(q=>[q[1],q[0]]),st):L.circleMarker([it.p[1],it.p[0]],{...st,radius:9});
-    g.bindTooltip(`${esc(it.f.name)}<small>${val}${yr}</small>`,{permanent:true,direction:'bottom',className:'lmlbl',offset:[0,6]});g.on('click',()=>openFieldForm(it.f.id));lmapLayer.addLayer(g)}
+    g.bindTooltip(`${esc(it.f.name)}<small>${val}${yr}</small>`,{permanent:true,direction:'bottom',className:'lmlbl',offset:[0,6]});g.on('click',()=>openFieldForm(it.f.id));lmapLayer.addLayer(g);lmapById.set(it.f.id,g)}
   const key=items.map(it=>it.f.id+':'+(it.c?it.c.length:0)+':'+it.p.join(',')).join('|');
   if(key!==lmapKey){lmapKey=key;const fit=()=>lmap.fitBounds(lmapLayer.getBounds(),{padding:[50,50],maxZoom:17,animate:false});lmap.invalidateSize();fit();lmap.whenReady(fit)}
   $('#lmLegend').innerHTML='<span><i style="background:var(--good)"></i>κέρδος</span><span><i style="background:var(--bad)"></i>ζημιά</span><span><i style="background:var(--muted);opacity:.4"></i>χωρίς καταχωρίσεις</span>';
   $('#lmNote').textContent='Κάθε αγροτεμάχιο δείχνει το καθαρό της τελευταίας ολοκληρωμένης χρονιάς του. Ζουμ με τη ρόδα, πάτα ένα αγροτεμάχιο για να το αλλάξεις.'+(missing?` ${missing===1?'Ένα αγροτεμάχιο δεν έχει':missing+' αγροτεμάχια δεν έχουν'} θέση και δεν φαίνεται εδώ.`:'')}
+function mapFitAll(anim){if(lmap&&lmapLayer.getLayers().length)lmap.fitBounds(lmapLayer.getBounds(),{padding:[50,50],maxZoom:17,animate:!!anim})}
+// «Στον χάρτη» on a field card: scroll up to the map and zoom on that field.
+function mapZoom(id){const g=lmapById.get(id);if(!lmap||!g)return;window.scrollTo({top:$('#fieldMap').getBoundingClientRect().top+scrollY-$('header.top').offsetHeight-12,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  if(g.getBounds)lmap.fitBounds(g.getBounds(),{padding:[60,60],maxZoom:18});else lmap.setView(g.getLatLng(),17);g.openTooltip()}
 function renderFieldMap(fs){const box=$('#fieldMap');const all=stats();
   const items=fs.map(f=>{const c=parseCoords(f.boundary);const p=fieldPoint(f);if(!p)return null;
     const ss=all.filter(s=>s.fieldId===f.id).sort((a,b)=>a.season-b.season);const s=ss.filter(x=>x.closed).pop()||ss.pop();
     const v=s?(num(f.stremmata)?s.perStr:s.net):0;return {f,c:c.length>=3?c:null,p,s,v,perStr:!!num(f.stremmata)}}).filter(Boolean);
   if(!items.length){box.hidden=true;return}
   if(liveMapOk()){renderLiveMap(box,items,fs.length-items.length);return}
-  if(lmap){lmap.remove();lmap=null}box.dataset.mode='draw';
+  if(lmap){lmap.remove();lmap=null}lmapById.clear();box.dataset.mode='draw';
   const lat0=Math.cos(items[0].p[1]*Math.PI/180);const pr=q=>[q[0]*lat0,-q[1]];
   const pts=items.flatMap(it=>(it.c||[it.p]).map(pr));const xs=pts.map(q=>q[0]),ys=pts.map(q=>q[1]);
   const minx=Math.min(...xs),miny=Math.min(...ys),w=Math.max(...xs)-minx||1e-4,h=Math.max(...ys)-miny||1e-4;
@@ -745,7 +750,7 @@ function renderFields(){
         <dt>Άρδευση</dt><dd>${f.irrigated?'Ναι':'Όχι'}</dd>
         <dt>Καταχωρίσεις</dt><dd>${n}</dd>
       </dl>
-      <div class="row">${mapsLinks(f)}<button data-act="openFieldForm" data-arg="${f.id}">Αλλαγή</button></div>
+      <div class="row">${lmapById.has(f.id)?`<button data-act="mapZoom" data-arg="${f.id}">Στον χάρτη</button>`:''}${mapsLinks(f)}<button data-act="openFieldForm" data-arg="${f.id}">Αλλαγή</button></div>
     </div>`}).join('');
 }
 
