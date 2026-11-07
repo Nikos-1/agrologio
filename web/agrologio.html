@@ -373,7 +373,13 @@ document.addEventListener('keydown',ev=>{if(ev.key!=='Enter'&&ev.key!==' ')retur
 // Ελιά and Αμπέλι are built in; «Χωρίς καλλιέργεια» has no plants; crops the user names («Άλλη») live in settings.crops under keys x-….
 const CROPS_BASE={olive:{name:'Ελιά',plants:'δέντρα',plant1:'δέντρο'},vine:{name:'Αμπέλι',plants:'κλήματα',plant1:'κλήμα'},none:{name:'Χωρίς καλλιέργεια',plants:'φυτά',plant1:'φυτό',noPlants:true}};
 const isCustomCrop=c=>typeof c==='string'&&c.startsWith('x-');
-const CROPS=new Proxy(CROPS_BASE,{get:(t,k)=>t[k]??(isCustomCrop(k)?{name:S.settings?.crops?.[k]?.name||'Άλλη καλλιέργεια',plants:'φυτά',plant1:'φυτό',custom:true}:undefined)});
+// A custom crop says what it has: trees, vines (plants in rows), or nothing to count (e.g. wheat).
+const KIND_WORDS={tree:['δέντρ','δενδρ','αμυγδαλ','κερασ','βυσσιν','πορτοκαλ','λεμον','μανταριν','νεραντζ','γκρειπ','μηλ','αχλαδ','ροδακιν','νεκταριν','βερικοκ','δαμασκην','συκ','καρυδ','φιστικ','καστανι','φουντουκ','ροδι','κυδων','αβοκαντο','χαρουπ','μουρι','λωτ','ακροδρυ','εσπεριδοειδ'],
+  vine:['σταφυλ','κλημ','αμπελ','ακτινιδ','βατομουρ','μυρτιλ','σμεουρ','λυκιο','goji'],
+  field:['σιτ','κριθ','βρωμ','καλαμπ','τριφυλλ','μηδικ','βαμβακ','πατατ','ντοματ','λαχαν','κηπ','βικ','ρεβιθ','φακ','φασολ','κρεμμυδ','καρπουζ','πεπον','αγγουρ','κολοκυθ','ηλιαν','λιβαδ','βοσκ','σανο','ζωοτροφ','σπαραγγ','φραουλ']};
+const guessKind=nm=>{const w=normWord(nm);for(const k of ['field','vine','tree'])if(KIND_WORDS[k].some(x=>w.includes(normWord(x))))return k;return ''};
+const KIND_LABELS={tree:{plants:'δέντρα',plant1:'δέντρο'},vine:{plants:'κλήματα',plant1:'κλήμα'},field:{plants:'φυτά',plant1:'φυτό',noPlants:true}};
+const CROPS=new Proxy(CROPS_BASE,{get:(t,k)=>t[k]??(isCustomCrop(k)?{name:S.settings?.crops?.[k]?.name||'Άλλη καλλιέργεια',plants:'φυτά',plant1:'φυτό',...KIND_LABELS[S.settings?.crops?.[k]?.kind],kind:S.settings?.crops?.[k]?.kind||'',custom:true}:undefined)});
 const cropCls=c=>c==='olive'||c==='vine'||c==='none'?c:'other';
 const cropColor=c=>`var(--${c==='olive'||c==='vine'?c:c==='none'?'muted':'other'})`;
 const customCrops=()=>Object.entries(S.settings?.crops||{}).filter(([k,v])=>isCustomCrop(k)&&v?.name).sort((a,b)=>a[1].name.localeCompare(b[1].name,'el'));
@@ -785,8 +791,9 @@ function openFieldForm(id){
   <form id="fForm">
     <div class="fields">
       <label class="f">Όνομα<input id="fName" required value="${esc(f.name)}" placeholder="π.χ. Κάτω Λάκκα"></label>
-      <label class="f">Καλλιέργεια<select id="fCrop">${cropKeys().map(k=>`<option value="${k}">${esc(CROPS[k].name)}</option>`).join('')}<option value="__new">Άλλη (γράψε ποια)…</option></select></label>
+      <label class="f">Καλλιέργεια<select id="fCrop">${cropKeys().map(k=>`<option value="${k}">${esc(CROPS[k].name)}</option>`).join('')}<option value="__new">Άλλη…</option></select></label>
       <label class="f" id="fCropNewL" hidden>Ποια καλλιέργεια<input id="fCropNew" placeholder="π.χ. Αμυγδαλιά, Πορτοκαλιά, Σιτάρι" autocomplete="off"></label>
+      <label class="f" id="fKindL" hidden>Τι έχει<select id="fKind"><option value="tree">Δέντρα</option><option value="vine">Κλήματα</option><option value="field">Χωρίς αριθμό φυτών</option></select></label>
       <label class="f">Στρέμματα<input id="fStr" type="number" min="0" step="any" inputmode="decimal" required value="${esc(f.stremmata??'')}"></label>
       <label class="f" id="fPlantsL">Αριθμός δέντρων<input id="fPlants" type="number" min="0" step="1" inputmode="numeric" value="${esc(f.plants??'')}"></label>
       <label class="f">Ποικιλία<input id="fVar" value="${esc(f.variety)}" placeholder="π.χ. Κορωνέικη"></label>
@@ -797,9 +804,15 @@ function openFieldForm(id){
     <label class="f">Σημειώσεις<textarea id="fNote">${esc(f.notes)}</textarea></label>
     <div class="row"><button class="primary" type="submit">Αποθήκευση</button><button type="button" id="fCancel">Ακύρωση</button>${id?'<button type="button" class="danger" id="fDel">Διαγραφή</button>':''}</div>
   </form>`;
-  $('#fCrop').value=f.crop||'olive';
-  const setPl=()=>{const c=$('#fCrop').value;$('#fCropNewL').hidden=c!=='__new';if(c==='__new')$('#fCropNew').focus();$('#fPlantsL').hidden=c==='none';
-    $('#fPlantsL').firstChild.textContent=c==='vine'?'Αριθμός κλιμάτων':c==='olive'?'Αριθμός δέντρων':'Αριθμός φυτών / δέντρων'};setPl();$('#fCrop').onchange=setPl;
+  // Custom crops: the kind decides whether to ask for trees, vines or nothing. A typed name suggests a kind until the user picks one.
+  let kindTouched=false;
+  const setPl=(focus)=>{const c=$('#fCrop').value,custom=c==='__new'||isCustomCrop(c);$('#fCropNewL').hidden=c!=='__new';if(c==='__new'&&focus)$('#fCropNew').focus();
+    $('#fKindL').hidden=!custom;if(isCustomCrop(c)&&!kindTouched)$('#fKind').value=CROPS[c].kind||'tree';
+    const k=c==='olive'?'tree':c==='vine'?'vine':c==='none'?'field':$('#fKind').value;
+    $('#fPlantsL').hidden=k==='field';$('#fPlantsL').firstChild.textContent=k==='vine'?'Αριθμός κλιμάτων':'Αριθμός δέντρων'};
+  $('#fCrop').value=f.crop||'olive';setPl();$('#fCrop').onchange=()=>{kindTouched=false;setPl(true)};
+  $('#fKind').onchange=()=>{kindTouched=true;setPl()};
+  $('#fCropNew').oninput=()=>{if(kindTouched)return;const g=guessKind($('#fCropNew').value);if(g){$('#fKind').value=g;setPl()}};
   $('#fCancel').onclick=()=>{card.hidden=true};
   let dropB=false;if($('#fDropB'))$('#fDropB').onclick=e=>{dropB=true;e.target.parentElement.textContent='Το όριο θα αφαιρεθεί με την αποθήκευση.'};
   // Deleting a field takes its entries with it (one confirmation, with undo).
@@ -814,8 +827,10 @@ function openFieldForm(id){
     let crop=$('#fCrop').value;
     if(crop==='__new'){const nm=$('#fCropNew').value.trim().replace(/\s+/g,' ');if(!nm){toast('Γράψε ποια καλλιέργεια είναι');$('#fCropNew').focus();return}
       const same=Object.entries(CROPS_BASE).concat(customCrops()).find(([,v])=>normWord(v.name)===normWord(nm));
-      if(same)crop=same[0];else{crop='x-'+Date.now().toString(36);try{await db.doc('settings/main').set({...S.settings,crops:{...(S.settings.crops||{}),[crop]:{name:nm[0].toLocaleUpperCase('el')+nm.slice(1)}}})}catch(e){toast('Δεν αποθηκεύτηκε η καλλιέργεια: '+(e.message||e.code));return}}}
-    const d={name:$('#fName').value.trim(),crop,stremmata:num($('#fStr').value),plants:crop==='none'?0:Math.round(num($('#fPlants').value)),variety:$('#fVar').value.trim(),irrigated:$('#fIrr').checked,notes:$('#fNote').value.trim(),boundary:dropB?'':(f.boundary||''),example:!!f.example,updatedAt:Date.now()};
+      if(same)crop=same[0];else{crop='x-'+Date.now().toString(36);try{await db.doc('settings/main').set({...S.settings,crops:{...(S.settings.crops||{}),[crop]:{name:nm[0].toLocaleUpperCase('el')+nm.slice(1),kind:$('#fKind').value}}})}catch(e){toast('Δεν αποθηκεύτηκε η καλλιέργεια: '+(e.message||e.code));return}}}
+    if(isCustomCrop(crop)&&S.settings.crops?.[crop]&&S.settings.crops[crop].kind!==$('#fKind').value){
+      try{await db.doc('settings/main').set({...S.settings,crops:{...S.settings.crops,[crop]:{...S.settings.crops[crop],kind:$('#fKind').value}}})}catch(e){toast('Δεν αποθηκεύτηκε η καλλιέργεια: '+(e.message||e.code));return}}
+    const d={name:$('#fName').value.trim(),crop,stremmata:num($('#fStr').value),plants:CROPS[crop]?.noPlants||(isCustomCrop(crop)&&$('#fKind').value==='field')?0:Math.round(num($('#fPlants').value)),variety:$('#fVar').value.trim(),irrigated:$('#fIrr').checked,notes:$('#fNote').value.trim(),boundary:dropB?'':(f.boundary||''),example:!!f.example,updatedAt:Date.now()};
     const ll=$('#fLatLon').value.split(/[,\s]+/).map(Number).filter(isFinite);if(!d.boundary&&ll.length===2){d.lat=ll[0];d.lon=ll[1]}else{d.lat=null;d.lon=null}
     try{if(id)await db.doc('fields/'+id).set(d);else await db.collection('fields').add({...d,createdAt:Date.now()});card.hidden=true;toast('Αποθηκεύτηκε')}catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code))}};
   card.scrollIntoView({behavior:'smooth',block:'start'});
