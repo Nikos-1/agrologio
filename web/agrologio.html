@@ -30,15 +30,21 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:.
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
 .wrap{max-width:1480px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
-header.top .wrap{padding-block:10px 0;display:flex;flex-direction:column;gap:8px}
-.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header.top .wrap{padding-block:0;display:flex;flex-direction:column;gap:0}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:10px;border-bottom:1px solid var(--line);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px))}
+.brand h1{display:flex;align-items:center;gap:8px;font-family:var(--f-body);font-size:1.15rem;font-weight:700}
+.logo{width:24px;height:24px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round}.logo .lf{fill:var(--accent);stroke:none;opacity:.85}.logo .ol{fill:var(--olive);stroke:none}
+.brand .tools{display:flex;align-items:center;gap:10px}@media (max-width:520px){.brand{flex-wrap:nowrap}.brand #status{display:none}}
+.themebtn{border:0;background:none;color:var(--muted);box-shadow:none}.themebtn:hover{color:var(--ink)}.themebtn .moon{display:none}:root[data-theme="dark"] .themebtn .sun{display:none}:root[data-theme="dark"] .themebtn .moon{display:block}
+.ti{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 h1{font-family:var(--f-display);font-size:1.45rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
 h2{font-family:var(--f-display);font-size:1.2rem;margin:0;text-wrap:balance}
 h3{font-size:1rem;margin:0}
 .sub{color:var(--muted);font-size:.85rem}
-nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
-nav.tabs button{flex:0 0 auto;border:0;background:none;color:var(--muted);font:600 .92rem var(--f-body);padding:9px 12px 11px;border-bottom:3px solid transparent;cursor:pointer}
-nav.tabs button[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav.tabs{display:flex;justify-content:center;gap:6px;padding-block:8px;overflow-x:auto;scrollbar-width:none}
+nav.tabs button{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;border:0;background:none;box-shadow:none;color:var(--muted);font:600 .92rem var(--f-body);padding:8px 14px;border-radius:8px;cursor:pointer;min-height:0}
+nav.tabs button:hover{color:var(--ink);background:var(--sunk)}
+nav.tabs button[aria-current="page"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent)}
 main .wrap{display:flex;flex-direction:column;gap:18px;padding-block:18px 64px}
 section[hidden]{display:none!important}
 .stack{display:flex;flex-direction:column;gap:14px}
@@ -73,7 +79,7 @@ textarea{min-height:60px;resize:vertical}
 .check{display:flex;gap:8px;align-items:center;font-size:.92rem}
 .mflist{display:flex;flex-wrap:wrap;gap:6px 16px}
 ol.steps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}ol.steps li{display:flex;gap:12px;align-items:flex-start}ol.steps li p{margin:2px 0 8px}ol.steps li.done{opacity:.7}.stepn{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--sunk);color:var(--muted)}li.now .stepn{background:var(--accent);color:var(--accent-ink)}li.done .stepn{color:var(--good)}
-svg.fmap{width:100%;height:auto;display:block;margin:8px 0;background:var(--sunk);border-radius:var(--r)}svg.fmap .fm{cursor:pointer}svg.fmap .fm:hover path,svg.fmap .fm:hover circle,svg.fmap .fm:focus path,svg.fmap .fm:focus circle{stroke-width:3}svg.fmap .fm:focus{outline:none}svg.fmap .fmname{font:600 12px var(--f-body);fill:var(--ink);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}svg.fmap .fmval{font:500 11px var(--f-body);fill:var(--muted);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}
+svg.fmap{width:100%;height:auto;max-height:460px;display:block;margin:8px 0;background:var(--sunk);border-radius:var(--r)}svg.fmap .fm{cursor:pointer}svg.fmap .fm:hover path,svg.fmap .fm:hover circle,svg.fmap .fm:focus path,svg.fmap .fm:focus circle{stroke-width:3}svg.fmap .fm:focus{outline:none}svg.fmap .fmname{font:600 12px var(--f-body);fill:var(--ink);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}svg.fmap .fmval{font:500 11px var(--f-body);fill:var(--muted);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}
 svg.cmp{width:100%;height:auto;display:block;margin:6px 0}svg.cmp .cbase{stroke:var(--field-line);stroke-width:1}svg.cmp .cval{font:600 11px var(--f-body);fill:var(--ink)}svg.cmp .clab{font:500 10.5px var(--f-body);fill:var(--muted)}svg.cmp .cbar:hover path{filter:brightness(1.15)}
 .note.warn{color:var(--warn);font-weight:600}
 .check:has(input[type=radio]){align-items:flex-start}.check input[type=radio]{margin-top:3px}
@@ -100,7 +106,7 @@ svg.cmp{width:100%;height:auto;display:block;margin:6px 0}svg.cmp .cbase{stroke:
   table.rep td::before{content:attr(data-label);color:var(--muted);text-align:left;font-weight:500}
   table.rep td:first-child{font-weight:700;font-size:1.02rem}table.rep td:first-child::before{content:none}}
 /* Phone: all tabs visible (two rows), nothing hidden off to the side. */
-@media (max-width:640px){nav.tabs{flex-wrap:wrap;overflow:visible}nav.tabs button{padding:8px 10px 9px;font-size:.88rem}}
+@media (max-width:760px){nav.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}nav.tabs button{flex-direction:column;gap:3px;padding:7px 4px;font-size:.8rem;text-align:center}nav.tabs button span{line-height:1.15}}
 table{border-collapse:collapse;width:100%;font-size:.88rem}
 th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
 th{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;background:var(--sunk)}
@@ -164,16 +170,16 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
 <header class="top">
   <div class="wrap">
     <div class="brand">
-      <h1>Αγρολόγιο</h1>
-      <span class="sub" id="status">Φόρτωση…</span>
+      <h1><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20C9 15 13 11 19 5"/><path d="M12 12.5c-2.6-.4-4.3-2.3-4.6-5 2.7.3 4.4 2.2 4.6 5z" class="lf"/><path d="M15.2 9c.2-2.6 1.9-4.4 4.5-4.8-.2 2.7-2 4.5-4.5 4.8z" class="lf"/><ellipse cx="8.5" cy="16.8" rx="2" ry="2.6" transform="rotate(35 8.5 16.8)" class="ol"/><ellipse cx="14.2" cy="14.6" rx="1.8" ry="2.4" transform="rotate(35 14.2 14.6)" class="ol"/></svg>Αγρολόγιο</h1>
+      <div class="tools"><span class="sub" id="status">Φόρτωση…</span><button type="button" class="iconbtn themebtn" id="themeBtn" aria-label="Αλλαγή φωτεινού/σκούρου θέματος" title="Φωτεινό ή σκούρο θέμα"><svg class="ti sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg><svg class="ti moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button></div>
     </div>
     <nav class="tabs" id="tabs">
-      <button data-tab="home" aria-current="page">Επισκόπηση</button>
-      <button data-tab="entry">Νέα καταχώριση</button>
-      <button data-tab="log">Ημερολόγιο</button>
-      <button data-tab="fields">Αγροτεμάχια</button>
-      <button data-tab="reports">Αναφορές</button>
-      <button data-tab="settings">Ρυθμίσεις</button>
+      <button data-tab="home" aria-current="page"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Επισκόπηση</span></button>
+      <button data-tab="entry"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg><span>Νέα καταχώριση</span></button>
+      <button data-tab="log"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4.5" width="16" height="16" rx="2"/><path d="M4 9.5h16M8.5 2.5v4M15.5 2.5v4M8 13.5h3M8 16.5h6"/></svg><span>Ημερολόγιο</span></button>
+      <button data-tab="fields"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg><span>Αγροτεμάχια</span></button>
+      <button data-tab="reports"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V4M4 20h16"/><path d="M8.5 16v-4M12.5 16V8M16.5 16v-6"/></svg><span>Αναφορές</span></button>
+      <button data-tab="settings"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>Ρυθμίσεις</span></button>
     </nav>
   </div>
 </header>
@@ -675,15 +681,15 @@ function renderFieldMap(fs){const box=$('#fieldMap');const all=stats();
   const W=Math.round(Math.min(640,Math.max(320,innerWidth-64))),pad=48,sc=Math.min((W-2*pad)/w,(W*0.6-2*pad)/h),H=Math.max(160,Math.round(h*sc+2*pad)),ox=(W-w*sc)/2,oy=(H-h*sc)/2;
   const xy=q=>{const r=pr(q);return [(r[0]-minx)*sc+ox,(r[1]-miny)*sc+oy]};
   const max=Math.max(1,...items.map(it=>Math.abs(it.v)));
-  const shapes=items.map(it=>{const col=it.v>=0?'var(--good)':'var(--bad)';const op=(0.3+0.6*Math.abs(it.v)/max).toFixed(2);
-    const val=it.perStr?eur.format(it.v)+' /στρ.':money(it.v);const yr=it.s?seasonName(it.s.season,it.f.crop)+(it.s.closed?'':' (σε εξέλιξη)'):'';
+  const shapes=items.map(it=>{const empty=!it.s||(!it.s.cost&&!it.s.sales&&!it.s.otherInc&&it.s.subsidyManual==null);const col=empty?'var(--muted)':it.v>=0?'var(--good)':'var(--bad)';const op=empty?'0.15':(0.3+0.6*Math.abs(it.v)/max).toFixed(2);
+    const val=empty?'χωρίς καταχωρίσεις':it.perStr?eur.format(it.v)+' /στρ.':money(it.v);const yr=it.s?seasonName(it.s.season,it.f.crop)+(it.s.closed?'':' (σε εξέλιξη)'):'';
     const sp=it.c?it.c.map(xy):null;const ext=sp?Math.max(Math.max(...sp.map(q=>q[0]))-Math.min(...sp.map(q=>q[0])),Math.max(...sp.map(q=>q[1]))-Math.min(...sp.map(q=>q[1]))):0;const big=ext>=24;
     const [cx,cy]=xy(it.p);const bot=big?Math.max(...sp.map(q=>q[1])):cy+9;
     const mark=big?`<path d="${sp.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join('')}Z" fill="${col}" fill-opacity="${op}" stroke="${col}" stroke-width="1.5"/>`:`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="9" fill="${col}" fill-opacity="${op}" stroke="${col}" stroke-width="1.5"/>`;
     return `<g class="fm" data-act="openFieldForm" data-arg="${it.f.id}" tabindex="0" role="button" aria-label="${esc(it.f.name)}: ${val}"><title>${esc(it.f.name)} · ${yr}: ${val}</title>${mark}
       <text x="${cx.toFixed(1)}" y="${(bot+15).toFixed(1)}" text-anchor="middle" class="fmname">${esc(it.f.name)}</text><text x="${cx.toFixed(1)}" y="${(bot+29).toFixed(1)}" text-anchor="middle" class="fmval">${val}</text></g>`}).join('');
   const missing=fs.length-items.length;
-  box.hidden=false;box.innerHTML=`<div class="row" style="justify-content:space-between"><h2>Χάρτης αγροτεμαχίων</h2><span class="legend"><span><i style="background:var(--good)"></i>κέρδος</span><span><i style="background:var(--bad)"></i>ζημιά</span><span>πιο έντονο = μεγαλύτερο ποσό</span></span></div>
+  box.hidden=false;box.innerHTML=`<div class="row" style="justify-content:space-between"><h2>Χάρτης αγροτεμαχίων</h2><span class="legend"><span><i style="background:var(--good)"></i>κέρδος</span><span><i style="background:var(--bad)"></i>ζημιά</span><span><i style="background:var(--muted);opacity:.4"></i>χωρίς καταχωρίσεις</span><span>πιο έντονο = μεγαλύτερο ποσό</span></span></div>
     <svg class="fmap" viewBox="0 0 ${W} ${H}" role="img" aria-label="Χάρτης με όλα τα αγροτεμάχια">${shapes}</svg>
     <p class="note">Κάθε αγροτεμάχιο δείχνει το καθαρό της τελευταίας ολοκληρωμένης χρονιάς του. Πάτα ένα για να το αλλάξεις.${missing?` ${missing===1?'Ένα αγροτεμάχιο δεν έχει':missing+' αγροτεμάχια δεν έχουν'} θέση και δεν φαίνεται εδώ.`:''}</p>`}
 function renderFields(){
@@ -1114,6 +1120,7 @@ document.addEventListener('input',e=>{if(e.target.inputMode==='decimal')e.target
 document.addEventListener('blur',e=>{if(e.target.inputMode==='decimal')normTyped(e.target)},true);
 {const fix=r=>r.querySelectorAll('input[type=number]').forEach(i=>{i.type='text';if(!i.inputMode)i.inputMode='decimal'});fix(document);
   new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1){if(n.matches('input[type=number]'))fix(n.parentNode);else fix(n)}}).observe(document.body,{childList:true,subtree:true})}
+$('#themeBtn').onclick=()=>{const dark=document.documentElement.dataset.theme==='dark'||(!document.documentElement.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);const t=dark?'light':'dark';try{localStorage.setItem('agrologio-theme',t)}catch{}applyTheme(t);$('#sTheme').value=t};
 $('#sTheme').value=getTheme();$('#sTheme').onchange=e=>{const t=e.target.value;try{localStorage.setItem('agrologio-theme',t)}catch{}applyTheme(t)};
 $('#sSize').value=getSize();$('#sSize').onchange=e=>{const v=e.target.value;try{localStorage.setItem('agrologio-size',v)}catch{}applySize(v)};
 $('#setForm').addEventListener('input',e=>{if(e.target.id!=='sTheme'&&e.target.id!=='sSize')$('#setDirty').hidden=false});
