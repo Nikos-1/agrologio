@@ -25,7 +25,8 @@
   --accent:#b2c46c; --accent-ink:#151a0d; --good:#6fca8e; --bad:#f08b7c; --warn:#e8b75a; color-scheme:dark }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+html{font-size:100%}html[data-size="l"]{font-size:112.5%}html[data-size="xl"]{font-size:125%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:.9375rem;line-height:1.45}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
 .wrap{max-width:1480px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
@@ -70,6 +71,10 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--
 input,select,textarea{font:400 1rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--field-line);border-radius:8px;padding:9px 10px;width:100%;min-width:0}
 textarea{min-height:60px;resize:vertical}
 .check{display:flex;gap:8px;align-items:center;font-size:.92rem}
+.mflist{display:flex;flex-wrap:wrap;gap:6px 16px}
+ol.steps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}ol.steps li{display:flex;gap:12px;align-items:flex-start}ol.steps li p{margin:2px 0 8px}ol.steps li.done{opacity:.7}.stepn{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--sunk);color:var(--muted)}li.now .stepn{background:var(--accent);color:var(--accent-ink)}li.done .stepn{color:var(--good)}
+svg.fmap{width:100%;height:auto;display:block;margin:8px 0;background:var(--sunk);border-radius:var(--r)}svg.fmap .fm{cursor:pointer}svg.fmap .fm:hover path,svg.fmap .fm:hover circle,svg.fmap .fm:focus path,svg.fmap .fm:focus circle{stroke-width:3}svg.fmap .fm:focus{outline:none}svg.fmap .fmname{font:600 12px var(--f-body);fill:var(--ink);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}svg.fmap .fmval{font:500 11px var(--f-body);fill:var(--muted);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}
+svg.cmp{width:100%;height:auto;display:block;margin:6px 0}svg.cmp .cbase{stroke:var(--field-line);stroke-width:1}svg.cmp .cval{font:600 11px var(--f-body);fill:var(--ink)}svg.cmp .clab{font:500 10.5px var(--f-body);fill:var(--muted)}svg.cmp .cbar:hover path{filter:brightness(1.15)}
 .note.warn{color:var(--warn);font-weight:600}
 .check:has(input[type=radio]){align-items:flex-start}.check input[type=radio]{margin-top:3px}
 .linkbtn{all:unset;color:var(--accent,inherit);text-decoration:underline;cursor:pointer}.linkbtn:focus-visible{outline:2px solid currentColor}
@@ -124,6 +129,7 @@ tr.total td{font-weight:700;background:var(--sunk)}
 .unit i{font-style:normal;color:var(--muted);font-size:.82rem;padding-right:10px;white-space:nowrap}
 @media (max-width:440px){.setrow{grid-template-columns:1fr 140px}}
 .logentry{border-bottom:1px solid var(--line)}.logentry:last-child{border-bottom:0}.logentry .item{border-bottom:0}
+@media (max-width:480px){.logentry .item .num{white-space:normal;text-align:right}}
 .logentry.open>.item{background:var(--sunk)}.chev{color:var(--muted);transition:transform .15s}.logentry.open .chev{transform:rotate(180deg)}
 .detail{padding:6px 14px 14px 98px;display:flex;flex-direction:column;gap:2px;background:var(--sunk)}
 .dline{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) 110px 92px;gap:10px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--line)}
@@ -202,6 +208,14 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
             <label class="f" id="eTaskOtherWrap" hidden>Περιγραφή εργασίας<input id="eTaskOther" placeholder="π.χ. Μπόλιασμα"></label>
           </div>
           <p class="note" id="farmNote" hidden>Κοινό έξοδο για όλο το κτήμα. Μοιράζεται αυτόματα στα αγροτεμάχια ανάλογα με τα στρέμματα και μπαίνει στη χρονιά που τρέχει σε κάθε αγροτεμάχιο εκείνη την ημερομηνία.</p>
+          <div id="multiPart" class="stack" style="gap:8px" hidden>
+            <label class="check"><input type="checkbox" id="mfOn"> Η ίδια εργασία έγινε και σε άλλα αγροτεμάχια</label>
+            <div id="mfBox" class="stack" style="gap:8px" hidden>
+              <div id="mfList" class="mflist"></div>
+              <label class="f">Τα έξοδα που γράφεις παρακάτω είναι<select id="mfMode"><option value="split">για όλα μαζί (μοιράζονται ανά στρέμμα)</option><option value="each">για κάθε αγροτεμάχιο χωριστά (ίδια σε όλα)</option></select></label>
+              <p class="note" id="mfHint"></p>
+            </div>
+          </div>
           <div class="stack" style="gap:8px" id="eCostBlock">
             <div class="row" style="justify-content:space-between"><span class="label">Έξοδα της εργασίας</span><button type="button" id="addLine">+ Προσθήκη εξόδου</button></div>
             <div class="lines" id="eLines"></div>
@@ -250,6 +264,7 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
     <div class="row">
       <label class="f" style="flex:1 1 160px">Αγροτεμάχιο<select id="logField"></select></label>
       <label class="f" style="flex:1 1 140px">Χρονιά<select id="logSeason"></select></label>
+      <label class="f" style="flex:2 1 200px">Αναζήτηση<input id="logSearch" type="search" placeholder="π.χ. χαλκός, πετρέλαιο, 150" autocomplete="off"></label>
     </div>
     <div id="logList"></div>
   </section>
@@ -266,6 +281,7 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
     </div>
     <div id="kmlImport" class="card" hidden></div>
     <div id="fieldFormCard" class="card" hidden></div>
+    <div id="fieldMap" class="card" hidden></div>
     <div id="fieldList" class="grid"></div>
   </section>
 
@@ -295,6 +311,7 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
       <div class="setgroup">
         <h3 class="label">Εμφάνιση</h3>
         <label class="setrow themerow" for="sTheme"><span><b>Εμφάνιση εφαρμογής</b><small>Ισχύει αμέσως. Το «Σύμφωνα με το σύστημα» αλλάζει μόνο του όταν αλλάζει το θέμα των Windows.</small></span><span class="unit"><select id="sTheme"><option value="light">Light (ανοιχτά)</option><option value="dark">Dark (σκούρα)</option><option value="auto">Σύμφωνα με το σύστημα</option></select></span></label>
+        <label class="setrow" for="sSize"><span><b>Μέγεθος γραμμάτων</b><small>Ισχύει αμέσως, μόνο σε αυτή τη συσκευή.</small></span><span class="unit"><select id="sSize"><option value="">Κανονικά</option><option value="l">Μεγάλα</option><option value="xl">Πολύ μεγάλα</option></select></span></label>
       </div>
       <div class="setgroup">
         <h3 class="label">Κάρτα Ελαιουργείου</h3>
@@ -324,8 +341,9 @@ const PDF_FONT_BOLD="AAEAAAAOAIAAAwBgR0RFRgQQBEYAAGX8AAAAKEdQT1NEdkx1AABmJAAAACB
 
 <script>
 // Buttons inside generated HTML say what they do with data-act (no inline handlers, so the desktop page can forbid inline scripts).
-const ACTS={addField:()=>{go('fields');openFieldForm()},hideCard:b=>{b.closest('.card').hidden=true},newEntry:(b,a)=>newEntry(a||undefined),logFor:(b,a)=>logFor(a),openFieldForm:(b,a)=>openFieldForm(a||undefined),editEntry:(b,a)=>editEntry(a),sellOil:(b,a)=>{newEntry(a||undefined);setKind('income');$('#iKind').value='oil';syncIncome();$('#iQty').focus()}};
+const ACTS={goTab:(b,a)=>go(a),guideOff:()=>{try{localStorage.setItem('agrologio-guide-off','1')}catch{}renderHome()},addField:()=>{go('fields');openFieldForm()},hideCard:b=>{b.closest('.card').hidden=true},newEntry:(b,a)=>newEntry(a||undefined),logFor:(b,a)=>logFor(a),openFieldForm:(b,a)=>openFieldForm(a||undefined),editEntry:(b,a)=>editEntry(a),sellOil:(b,a)=>{newEntry(a||undefined);setKind('income');$('#iKind').value='oil';syncIncome();$('#iQty').focus()}};
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-act]');if(b&&ACTS[b.dataset.act])ACTS[b.dataset.act](b,b.dataset.arg)});
+document.addEventListener('keydown',ev=>{if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches?.('svg [data-act]')){ev.preventDefault();ev.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
 // Esc closes the open box (line editor, field form, import or delete boxes).
 document.addEventListener('keydown',ev=>{if(ev.key!=='Escape'||ev.defaultPrevented)return;
   if(lineEdit){lineEdit=null;renderLog();return}
@@ -348,6 +366,9 @@ function applyTheme(t){const r=document.documentElement,N=window.katastixoNative
   delete r.dataset.theme}
 window.katastixoNative?.onSystemTheme?.(d=>{if(getTheme()==='auto')document.documentElement.dataset.theme=d?'dark':'light'});
 applyTheme(getTheme());
+function getSize(){try{return localStorage.getItem('agrologio-size')||''}catch{return ''}}
+function applySize(v){const r=document.documentElement;if(v)r.dataset.size=v;else delete r.dataset.size}
+applySize(getSize());
 const millPctSetting=()=>num(S.settings.millPct);
 const millPct=()=>editing&&editing.kind==='work'&&MILL.has(editing.task)?num(editing.millPct):millPctSetting();
 const r1=x=>Math.round(x*10)/10;
@@ -540,17 +561,26 @@ function render(){if(!farmFrozen&&db&&S.loaded.f&&S.loaded.e){farmFrozen=true;fr
   renderHome();renderFieldSelects();renderEntrySummary();renderLog();renderFields();renderReports();renderSettings();
 }
 
+// First-use guide: three steps, each ticks itself off; hidden once all are done or the user closes it.
+function guideHtml(fs){let off=false;try{off=localStorage.getItem('agrologio-guide-off')==='1'}catch{}
+  const real=fs.filter(f=>!f.example);const st=[real.length>0,!!S.settingsSaved,[...S.entries.values()].some(e=>!e.example&&(e.kind==='farm'||real.some(f=>f.id===e.fieldId)))];
+  if(off||st.every(Boolean))return '';const next=st.indexOf(false);
+  const steps=[['Πρόσθεσε τα αγροτεμάχιά σου','Καλλιέργεια, στρέμματα και αριθμός δέντρων ή κλιμάτων. Μπορείς να τα φέρεις και από το Google Earth (KML).','<button class="primary" data-act="addField">+ Αγροτεμάχιο</button>'],
+    ['Γράψε μεροκάματα και επιδότηση','Στις Ρυθμίσεις βάζεις πόσο μετράει το μεροκάματο, η δική σου εργασία και η επιδότηση ανά στρέμμα.','<button data-act="goTab" data-arg="settings">Άνοιγμα ρυθμίσεων</button>'],
+    ['Κατάγραψε την πρώτη εργασία','Π.χ. ψέκασμα, κλάδεμα ή πετρέλαιο. Από εκεί και πέρα η εφαρμογή βγάζει μόνη της το κέρδος.','<button data-act="newEntry">Νέα καταχώριση</button>']];
+  return `<div class="card guide"><div class="row" style="justify-content:space-between"><h2>Πρώτα βήματα</h2><button type="button" class="linkbtn" data-act="guideOff">Απόκρυψη οδηγού</button></div>
+    <ol class="steps">${steps.map(([t,d,b],i)=>`<li class="${st[i]?'done':i===next?'now':''}"><span class="stepn" aria-hidden="true">${st[i]?'✓':i+1}</span><div><b>${t}</b>${st[i]?' <span class="note pos">έγινε</span>':''}<p class="note">${d}</p>${!st[i]&&i===next?`<div class="row">${b}</div>`:''}</div></li>`).join('')}</ol></div>`}
 function renderHome(){
   const el=$('#tab-home');
   if(dbState==='loading'){el.innerHTML='<div class="card empty"><p>Φορτώνω τα αγροτεμάχια σου…</p></div>';return}
   if(!db){el.innerHTML=`<div class="card empty"><h2>Η αποθήκευση δεν είναι διαθέσιμη</h2><p>Άνοιξε τη σελίδα από το claude.ai, συνδεδεμένος, για να αποθηκεύονται οι καταχωρίσεις σου.</p></div>`;return}
   const fs=fieldsSorted();
-  if(!fs.length){el.innerHTML=`<div class="card empty"><h2>Ξεκίνα από τα αγροτεμάχια σου</h2><p>Πρόσθεσε κάθε αγροτεμάχιο με την καλλιέργεια, τα στρέμματα και τον αριθμό δέντρων ή κλιμάτων. Μπορείς να τα φέρεις και από το Google Earth με αρχείο KML.</p><button class="primary" data-act="addField">+ Πρώτο αγροτεμάχιο</button></div>`;return}
+  if(!fs.length){el.innerHTML=guideHtml(fs)||`<div class="card empty"><h2>Ξεκίνα από τα αγροτεμάχια σου</h2><p>Πρόσθεσε κάθε αγροτεμάχιο με την καλλιέργεια, τα στρέμματα και τον αριθμό δέντρων ή κλιμάτων. Μπορείς να τα φέρεις και από το Google Earth με αρχείο KML.</p><button class="primary" data-act="addField">+ Πρώτο αγροτεμάχιο</button></div>`;return}
   const st=stats();
   const cur=fs.map(f=>({f,s:st.find(x=>x.fieldId===f.id&&x.season===openSeason(f.id)),last:st.find(x=>x.fieldId===f.id&&x.season===lastClosed(f.id))}));
   const totCur=cur.reduce((a,x)=>a+(x.s?.cost||0),0);
   const totLast=cur.reduce((a,x)=>a+(x.last?.net||0),0);const anyLast=cur.some(x=>x.last);
-  el.innerHTML=`
+  el.innerHTML=`${guideHtml(fs)}
   <div class="grid home-tiles">
     <div class="card"><span class="label">Έξοδα τρέχουσας χρονιάς</span><span class="big">${money(totCur)}</span><span class="note">Όλα τα αγροτεμάχια, από την τελευταία συγκομιδή μέχρι σήμερα</span></div>
 ${(()=>{const os=st.filter(x=>x.stored);if(!os.length)return '';const tot=r1(os.reduce((a,x)=>a+x.oilStock,0));
@@ -595,11 +625,12 @@ function logDetail(e){const id=e.id;
     return `<div class="dline"><span>${esc(c.name)}</span><span class="dq">${l.qty?`${nf.format(num(l.qty))} ${esc(c.unit)} × ${eur2.format(num(l.price))}`:''}</span><span class="num">${eur2.format(num(l.amount))}</span><span class="acts"><button type="button" class="iconbtn" data-act="ledit" data-id="${id}" data-i="${i}" title="Αλλαγή" aria-label="Αλλαγή">${PEN}</button>${binBtn(i,'ldel',i)}</span></div>`}).join('')||'<p class="note">Δεν έχει εγγραφές εξόδων.</p>';
   const extra=[e.kgFruit?`${nf.format(num(e.kgFruit))} κιλά καρπού`:'',e.kgOil?`${nf.format(num(e.kgOil))} κιλά λαδιού`:'',e.millKeptKg?`κράτηση ελαιουργείου ${nf.format(num(e.millKeptKg))} κ.${e.millPct?` (${nf.format(e.millPct)}%)`:''}`:'',MILL.has(e.task)?`υπόλοιπο ${nf.format(num(e.kgOil)-num(e.millKeptKg))} κ.`:'',e.homeKg?`σπίτι ${nf.format(num(e.homeKg))} κ.`:'',MILL.has(e.task)?`σε φύλαξη ${nf.format(num(e.storedKg))} κ.`:'',e.note?esc(e.note):''].filter(Boolean).join(' · ');
   return `<div class="detail">${rows}${e.kind!=='income'&&(e.lines||[]).length?`<div class="dline dtotal"><span>Σύνολο</span><span></span><span class="num">${eur2.format(entryCost(e))}</span><span></span></div>`:''}${extra?`<p class="note">${extra}</p>`:''}
-    <div class="row dentry"><span class="note">Όλη η καταχώριση</span><button type="button" data-act="edit" data-id="${id}">${PEN} Αλλαγή</button>${sure('e')?`<button type="button" class="danger sure" data-act="del" data-id="${id}">Σίγουρα; Διαγραφή καταχώρισης</button>`:`<button type="button" class="danger" data-act="del" data-id="${id}">${BIN} Διαγραφή</button>`}</div></div>`}
+    <div class="row dentry"><span class="note">Όλη η καταχώριση</span><button type="button" data-act="edit" data-id="${id}">${PEN} Αλλαγή</button>${e.kind!=='income'&&!HARVEST.has(e.task)&&!MILL.has(e.task)||e.kind==='income'?`<button type="button" data-act="repeat" data-id="${id}" title="Νέα καταχώριση με τα ίδια στοιχεία και σημερινή ημερομηνία">↻ Επανάληψη</button>`:''}${sure('e')?`<button type="button" class="danger sure" data-act="del" data-id="${id}">Σίγουρα; Διαγραφή καταχώρισης</button>`:`<button type="button" class="danger" data-act="del" data-id="${id}">${BIN} Διαγραφή</button>`}</div></div>`}
 async function logAction(ev){const b=ev.target.closest('[data-act]');if(!b)return;const {act,id}=b.dataset;const i=+b.dataset.i;const e=S.entries.get(id);
   try{
   if(act==='toggle'){logOpen.has(id)?logOpen.delete(id):logOpen.add(id);lineEdit=null;logConfirm=null;renderLog();return}
   if(act==='edit'){editEntry(id);return}
+  if(act==='repeat'){repeatEntry(id);return}
   if(act==='ledit'){lineEdit={id,i};logConfirm=null;renderLog();const inp=$('#logList .dline.editing input');inp?.focus();inp?.select?.();return}
   if(act==='lcancel'){lineEdit=null;renderLog();return}
   if(!e)return;
@@ -611,12 +642,18 @@ async function logAction(ev){const b=ev.target.closest('[data-act]');if(!b)retur
   if(act==='del'){if(logConfirm!==id+'|e'){logConfirm=id+'|e';renderLog();return}if(!confirmDelete(e)){logConfirm=null;renderLog();return}logConfirm=null;logOpen.delete(id);await db.doc('entries/'+id).delete();toast('Η καταχώριση διαγράφηκε',restoreEntry(id,e));return}
   }catch(err){toast('Δεν αποθηκεύτηκε: '+(err.message||err.code))}}
 
+// Search: words in the task, note, field, categories or income kind (accents and case do not matter), or an amount.
+function logMatch(e,q){const n=num(q);const isNum=/^[\d.,\s€]+$/.test(q)&&n>0;
+  if(isNum){const amts=[entryCost(e),num(e.amount),...(e.lines||[]).map(l=>num(l.amount)),num(e.qty),num(e.kgOil),num(e.kgFruit)];if(amts.some(a=>Math.abs(a-n)<0.005))return true}
+  const hay=normWord([e.task,e.note,S.fields.get(e.fieldId)?.name,e.kind==='farm'?'κοινό έξοδο '+(SCOPES[e.scope]||''):'',INC[e.incomeKind]?.name,...(e.lines||[]).map(l=>CAT[l.cat]?.name)].filter(Boolean).join(' '));
+  return normWord(q).split(' ').every(w=>hay.includes(w))}
 function renderLog(){
   const fid=$('#logField').value,se=$('#logSeason').value;
   const part=e=>farmTargets(e).filter(t=>(!fid||t.id===fid)&&(!se||seasonAtDate(t.id,e.date)===+se)).reduce((a,t)=>a+t.share,0);
-  const list=entriesSorted().filter(e=>e.kind==='farm'?(!fid&&!se)||part(e)>1e-9:(S.fields.has(e.fieldId)&&(!fid||e.fieldId===fid)&&(!se||e.season===+se)));
+  const q=$('#logSearch').value.trim();
+  const list=entriesSorted().filter(e=>e.kind==='farm'?(!fid&&!se)||part(e)>1e-9:(S.fields.has(e.fieldId)&&(!fid||e.fieldId===fid)&&(!se||e.season===+se))).filter(e=>!q||logMatch(e,q));
   const el=$('#logList');
-  if(!list.length){el.innerHTML=`<div class="card empty"><p>Δεν υπάρχουν καταχωρίσεις ${fid||se?'για αυτό το φίλτρο':'ακόμα'}.</p><button class="primary" data-act="newEntry" data-arg="${fid}">+ Νέα καταχώριση</button></div>`;return}
+  if(!list.length){el.innerHTML=`<div class="card empty"><p>${q?`Καμία καταχώριση δεν ταιριάζει με «${esc(q)}»${fid||se?' σε αυτό το φίλτρο':''}.`:`Δεν υπάρχουν καταχωρίσεις ${fid||se?'για αυτό το φίλτρο':'ακόμα'}.`}</p><button class="primary" data-act="newEntry" data-arg="${fid}">+ Νέα καταχώριση</button></div>`;return}
   let sumC=0,sumI=0;
   const rows=list.map(e=>{const farm=e.kind==='farm';const f=S.fields.get(e.fieldId)||{name:'Όλο το κτήμα · '+(SCOPES[e.scope]||SCOPES.all)};let what,amt;
     if(e.kind!=='income'){const full=entryCost(e),pf=farm&&(fid||se)?part(e):1,c=full*pf;sumC+=c;what=esc(e.task)+(farm?` <span class="chip ex">κοινό έξοδο${pf<1-1e-9?` · μερίδιο ${nf.format(pf*100)}% από ${money(full)}`:''}</span>`:'')+(e.harvestDone?' <span class="chip closed">τέλος συγκομιδής</span>':'');amt=workAmt(e,c)}
@@ -626,8 +663,31 @@ function renderLog(){
   el.innerHTML=`<div class="row note" style="justify-content:space-between"><span>${plural(list.length,'καταχώριση','καταχωρίσεις')} · πάτα μία για να δεις τις εγγραφές της</span><span class="num">Έξοδα ${money(sumC)} · Έσοδα ${money(sumI)}</span></div><div class="list">${rows}</div>`;
 }
 
+// All fields on one drawing, coloured by profit per στρέμμα of each field's last finished year (or the current one if none is finished).
+function renderFieldMap(fs){const box=$('#fieldMap');const all=stats();
+  const items=fs.map(f=>{const c=parseCoords(f.boundary);const p=fieldPoint(f);if(!p)return null;
+    const ss=all.filter(s=>s.fieldId===f.id).sort((a,b)=>a.season-b.season);const s=ss.filter(x=>x.closed).pop()||ss.pop();
+    const v=s?(num(f.stremmata)?s.perStr:s.net):0;return {f,c:c.length>=3?c:null,p,s,v,perStr:!!num(f.stremmata)}}).filter(Boolean);
+  if(!items.length){box.hidden=true;return}
+  const lat0=Math.cos(items[0].p[1]*Math.PI/180);const pr=q=>[q[0]*lat0,-q[1]];
+  const pts=items.flatMap(it=>(it.c||[it.p]).map(pr));const xs=pts.map(q=>q[0]),ys=pts.map(q=>q[1]);
+  const minx=Math.min(...xs),miny=Math.min(...ys),w=Math.max(...xs)-minx||1e-4,h=Math.max(...ys)-miny||1e-4;
+  const W=Math.round(Math.min(640,Math.max(320,innerWidth-64))),pad=48,sc=Math.min((W-2*pad)/w,(W*0.6-2*pad)/h),H=Math.max(160,Math.round(h*sc+2*pad)),ox=(W-w*sc)/2,oy=(H-h*sc)/2;
+  const xy=q=>{const r=pr(q);return [(r[0]-minx)*sc+ox,(r[1]-miny)*sc+oy]};
+  const max=Math.max(1,...items.map(it=>Math.abs(it.v)));
+  const shapes=items.map(it=>{const col=it.v>=0?'var(--good)':'var(--bad)';const op=(0.3+0.6*Math.abs(it.v)/max).toFixed(2);
+    const val=it.perStr?eur.format(it.v)+' /στρ.':money(it.v);const yr=it.s?seasonName(it.s.season,it.f.crop)+(it.s.closed?'':' (σε εξέλιξη)'):'';
+    const sp=it.c?it.c.map(xy):null;const ext=sp?Math.max(Math.max(...sp.map(q=>q[0]))-Math.min(...sp.map(q=>q[0])),Math.max(...sp.map(q=>q[1]))-Math.min(...sp.map(q=>q[1]))):0;const big=ext>=24;
+    const [cx,cy]=xy(it.p);const bot=big?Math.max(...sp.map(q=>q[1])):cy+9;
+    const mark=big?`<path d="${sp.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join('')}Z" fill="${col}" fill-opacity="${op}" stroke="${col}" stroke-width="1.5"/>`:`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="9" fill="${col}" fill-opacity="${op}" stroke="${col}" stroke-width="1.5"/>`;
+    return `<g class="fm" data-act="openFieldForm" data-arg="${it.f.id}" tabindex="0" role="button" aria-label="${esc(it.f.name)}: ${val}"><title>${esc(it.f.name)} · ${yr}: ${val}</title>${mark}
+      <text x="${cx.toFixed(1)}" y="${(bot+15).toFixed(1)}" text-anchor="middle" class="fmname">${esc(it.f.name)}</text><text x="${cx.toFixed(1)}" y="${(bot+29).toFixed(1)}" text-anchor="middle" class="fmval">${val}</text></g>`}).join('');
+  const missing=fs.length-items.length;
+  box.hidden=false;box.innerHTML=`<div class="row" style="justify-content:space-between"><h2>Χάρτης αγροτεμαχίων</h2><span class="legend"><span><i style="background:var(--good)"></i>κέρδος</span><span><i style="background:var(--bad)"></i>ζημιά</span><span>πιο έντονο = μεγαλύτερο ποσό</span></span></div>
+    <svg class="fmap" viewBox="0 0 ${W} ${H}" role="img" aria-label="Χάρτης με όλα τα αγροτεμάχια">${shapes}</svg>
+    <p class="note">Κάθε αγροτεμάχιο δείχνει το καθαρό της τελευταίας ολοκληρωμένης χρονιάς του. Πάτα ένα για να το αλλάξεις.${missing?` ${missing===1?'Ένα αγροτεμάχιο δεν έχει':missing+' αγροτεμάχια δεν έχουν'} θέση και δεν φαίνεται εδώ.`:''}</p>`}
 function renderFields(){
-  const fs=fieldsSorted();const el=$('#fieldList');
+  const fs=fieldsSorted();const el=$('#fieldList');renderFieldMap(fs);
   if(!fs.length){el.innerHTML=`<div class="card empty" style="grid-column:1/-1"><p>Δεν έχεις αγροτεμάχια ακόμα. Πρόσθεσε ένα ή φέρε τα όρια από το Google Earth.</p></div>`;return}
   el.innerHTML=fs.map(f=>{const c=parseCoords(f.boundary);const n=[...S.entries.values()].filter(e=>e.fieldId===f.id).length;
     return `<div class="card">
@@ -704,6 +764,20 @@ async function handleKml(file){
     box.hidden=true;toast(n===1?'Εισήχθη 1 αγροτεμάχιο ή όριο':`Εισήχθησαν ${n} αγροτεμάχια ή όρια`)};
 }
 
+// «Σύγκριση χρονιών»: one small chart per field, net profit per στρέμμα of each year (last 6), so good and bad years stand out.
+function compareHtml(){const all=stats();const cards=fieldsSorted().map(f=>{const ss=all.filter(s=>s.fieldId===f.id).sort((a,b)=>a.season-b.season).slice(-6);if(ss.length<2)return '';
+    const perStr=!!num(f.stremmata);const v=ss.map(s=>perStr?s.perStr:s.net);const max=Math.max(0,...v),min=Math.min(0,...v),span=(max-min)||1;
+    const W=300,H=164,top=22,bot=38,ph=H-top-bot,bw=Math.min(40,(W-20)/ss.length-10),gap=(W-ss.length*bw)/(ss.length+1),y0=top+max/span*ph;
+    const col=f.crop==='vine'?'var(--vine)':'var(--olive)';const fmt=x=>perStr?eur.format(x):money(x);
+    const bars=ss.map((s,i)=>{const x=gap+i*(bw+gap),h=Math.abs(v[i])/span*ph,y=v[i]>=0?y0-h:y0,r=Math.min(4,h/2);
+      const d=v[i]>=0?`M${x},${y0}V${y+r}Q${x},${y} ${x+r},${y}H${x+bw-r}Q${x+bw},${y} ${x+bw},${y+r}V${y0}Z`:`M${x},${y0}V${y+h-r}Q${x},${y+h} ${x+r},${y+h}H${x+bw-r}Q${x+bw},${y+h} ${x+bw},${y+h-r}V${y0}Z`;
+      const ly=v[i]>=0?y-5:y+h+12;const name=seasonName(s.season,f.crop);
+      return `<g class="cbar"><title>${esc(name)}: ${fmt(v[i])}${perStr?' ανά στρέμμα':''} · καθαρό ${money(s.net)}${s.closed?'':' (σε εξέλιξη)'}</title><rect x="${x-gap/2}" y="0" width="${bw+gap}" height="${H}" fill="transparent"/>
+        <path d="${d}" fill="${col}" opacity="${s.closed?1:.45}"/><text x="${x+bw/2}" y="${ly}" text-anchor="middle" class="cval">${fmt(v[i])}</text><text x="${x+bw/2}" y="${H-6}" text-anchor="middle" class="clab">${esc(name)}</text></g>`}).join('');
+    return `<div class="card"><div class="row" style="justify-content:space-between"><b>${esc(f.name)}</b>${cropChip(f.crop)}</div>
+      <svg class="cmp" viewBox="0 0 ${W} ${H}" role="img" aria-label="Καθαρό ${perStr?'ανά στρέμμα ':''}ανά χρονιά για ${esc(f.name)}"><line x1="0" x2="${W}" y1="${y0}" y2="${y0}" class="cbase"/>${bars}</svg>
+      <p class="note">Καθαρό ${perStr?'ανά στρέμμα':''} κάθε χρονιάς. Η πιο αχνή στήλη είναι χρονιά σε εξέλιξη.</p></div>`}).filter(Boolean);
+  return cards.length?`<h2>Σύγκριση χρονιών</h2><div class="grid">${cards.join('')}</div>`:''}
 // Phone layout needs each cell to know its column name.
 const labelCells=root=>root.querySelectorAll('table.rep').forEach(t=>{const h=[...t.querySelectorAll('thead th')].map(x=>x.textContent);t.querySelectorAll('tbody tr').forEach(r=>[...r.children].forEach((td,i)=>td.dataset.label=h[i]||''))});
 function renderReports(){
@@ -727,6 +801,7 @@ function renderReports(){
     <dt>Ανά στρέμμα${multi?' τον χρόνο':''}</dt><dd class="${signCls(c.net)}">${c.str?eur.format(c.net/c.str):'–'}</dd><dt>Ανά ${CROPS[k].plant1}${multi?' τον χρόνο':''}</dt><dd class="${signCls(c.net)}">${c.plants?eur2.format(c.net/c.plants):'–'}</dd>
     ${k==='olive'?`<dt>Λάδι</dt><dd>${nf.format(c.kgOil)} κιλά${c.yF?` · απόδοση ${nf.format(c.yO/c.yF*100)}%`:''}</dd>${c.millKept||c.home||c.stored?`<dt>Από το λάδι</dt><dd>κράτηση ${nf.format(c.millKept)} · σπίτι ${nf.format(c.home)} · φύλαξη ${nf.format(c.stored)} κιλά</dd><dt>Πωλήσεις λαδιού</dt><dd>${nf.format(c.oilSoldKg)} κιλά${c.oilSoldKg?` · μέση τιμή ${eur2.format(c.oilSoldAmt/c.oilSoldKg)}/κ.`:''} · απόθεμα <b>${nf.format(c.oilStock)} κιλά</b></dd>`:''}`:`<dt>Σταφύλια</dt><dd>${nf.format(c.kgFruit)} κιλά</dd>`}</dl>
     ${catBar(c.byCat)}</div>`).join('')}</div>
+  ${compareHtml()}
   <h2>Ανά αγροτεμάχιο και χρονιά</h2>
   <div class="tablewrap"><table class="rep">
     <thead><tr><th>Αγροτεμάχιο</th><th>Χρονιά</th><th>Κατάσταση</th><th class="r">Έξοδα</th><th class="r">εκ των οποίων οικογ.</th><th class="r">Πωλήσεις</th><th class="r">Επιδότηση</th><th class="r">Καθαρό</th><th class="r">/ στρέμμα</th><th class="r">Παραγωγή</th></tr></thead>
@@ -794,7 +869,21 @@ function refreshLineCats(){const al=allowedCats();[...$('#eLines').children].for
 function syncTask(){const t=$('#eTask').value;$('#eTaskOtherWrap').hidden=t!=='__other';$('#harvestPart').hidden=!HARVEST.has(t);
   const m=MILL.has(t)&&$('#eField').value!==FARM;const was=!$('#millPart').hidden;$('#millPart').hidden=!m;$('#eCostBlock').hidden=m;
   {const fid=$('#eField').value;if(!editing&&!seasonTouched&&S.fields.has(fid)){const w=autoSeason(fid);if(![...$('#eSeason').options].some(o=>+o.value===w))$('#eSeason').innerHTML=seasonOptions(fid,w);$('#eSeason').value=w;incomeHint()}}
-  if(m)syncMill()}
+  if(m)syncMill();syncMulti()}
+// «Η ίδια εργασία και σε άλλα αγροτεμάχια»: only for a new, ordinary work entry (not harvest or milling, which have their own kilos).
+function syncMulti(){const fid=$('#eField').value,f=S.fields.get(fid),t=$('#eTask').value;
+  const others=f?fieldsSorted().filter(x=>x.id!==fid&&x.crop===f.crop):[];
+  const ok=kind==='work'&&!editing&&f&&others.length&&!HARVEST.has(t)&&!MILL.has(t);$('#multiPart').hidden=!ok;
+  if(!ok){$('#mfOn').checked=false;$('#mfBox').hidden=true;return}
+  const was=new Set([...document.querySelectorAll('#mfList input:checked')].map(i=>i.value));
+  if($('#mfList').dataset.for!==fid){$('#mfList').dataset.for=fid;$('#mfList').innerHTML=others.map(o=>`<label class="check"><input type="checkbox" value="${o.id}"> ${esc(o.name)} <span class="note">${nf.format(num(o.stremmata))} στρ.</span></label>`).join('')}
+  else document.querySelectorAll('#mfList input').forEach(i=>i.checked=was.has(i.value));
+  $('#mfBox').hidden=!$('#mfOn').checked;mfHint()}
+const mfTargets=()=>$('#multiPart').hidden||!$('#mfOn').checked?[]:[...document.querySelectorAll('#mfList input:checked')].map(i=>i.value);
+function mfShares(ids){const st=ids.map(id=>num(S.fields.get(id)?.stremmata));const tot=st.reduce((a,b)=>a+b,0);return ids.map((id,i)=>({id,share:tot?st[i]/tot:1/ids.length}))}
+function mfHint(){const ids=[$('#eField').value,...mfTargets()];if(ids.length<2){$('#mfHint').textContent='Διάλεξε σε ποια άλλα αγροτεμάχια έγινε.';return}
+  const tot=readLines().reduce((a,l)=>a+l.amount,0);const split=$('#mfMode').value==='split';
+  $('#mfHint').textContent=`Θα γραφτούν ${ids.length} καταχωρίσεις, μία σε κάθε αγροτεμάχιο`+(tot?': '+mfShares(ids).map(x=>`${S.fields.get(x.id).name} ${eur2.format(split?tot*x.share:tot)}`).join(' · '):'.')}
 function syncMill(){const pct=millPct(),oil=num($('#mKgOil').value),fruit=num($('#mKgFruit').value),k=$('#mKept');
   if(pct>0){k.readOnly=true;k.value=oil?r1(oil*pct/100):'';$('#mKeptHint').textContent=`Η κράτηση υπολογίζεται αυτόματα: ${nf.format(pct)}% από την Κάρτα Ελαιουργείου.`}
   else{k.readOnly=false;$('#mKeptHint').textContent='Γράψε τα κιλά της κράτησης, ή βάλε ποσοστό στις Ρυθμίσεις → Κάρτα Ελαιουργείου.'}
@@ -826,7 +915,7 @@ function wireLine(el){el.querySelector('.lc').onchange=e=>{const c=CAT[e.target.
   el.querySelectorAll('input').forEach(i=>i.oninput=calcLines);el.querySelector('.lx').onclick=()=>{el.remove();calcLines()}}
 function readLines(){return [...$('#eLines').children].map(el=>{const cat=el.querySelector('.lc').value;const isEur=CAT[cat].unit==='€';
   if(isEur)return {cat,amount:num(el.querySelector('.la').value)};const qty=num(el.querySelector('.lq').value),price=num(el.querySelector('.lp').value);return {cat,qty,price,amount:Math.round(qty*price*100)/100}}).filter(l=>l.amount>0)}
-function calcLines(){let t=0;[...$('#eLines').children].forEach(el=>{const cat=el.querySelector('.lc').value;const a=CAT[cat].unit==='€'?num(el.querySelector('.la').value):num(el.querySelector('.lq').value)*num(el.querySelector('.lp').value);t+=a;el.querySelector('.amt').textContent=a?eur2.format(a):''});$('#eTotal').textContent=eur2.format(t)}
+function calcLines(){let t=0;[...$('#eLines').children].forEach(el=>{const cat=el.querySelector('.lc').value;const a=CAT[cat].unit==='€'?num(el.querySelector('.la').value):num(el.querySelector('.lq').value)*num(el.querySelector('.lp').value);t+=a;el.querySelector('.amt').textContent=a?eur2.format(a):''});$('#eTotal').textContent=eur2.format(t);if(!$('#mfBox').hidden)mfHint()}
 function resetEntry(fid,keepDate){editing=null;seasonTouched=false;incomeLead='amount';$('#entryTitle').textContent='Νέα καταχώριση';$('#eCancel').hidden=true;$('#eDelete').hidden=true;$('#eDelete').textContent='Διαγραφή';delete $('#eDelete').dataset.sure;
   $('#entryForm').reset();$('#eDate').value=keepDate||today();if(fid&&(S.fields.has(fid)||fid===FARM))$('#eField').value=fid;$('#eLines').innerHTML='';syncEntryForm(true);addLine(defaultLine());setKind('work')}
 function newEntry(fid){resetEntry(fid);go('entry')}
@@ -865,6 +954,16 @@ async function saveEntry(ev){ev.preventDefault();if(!db)return;const fid=$('#eFi
     if(!amount){toast('Βάλε ποσό ή κιλά και τιμή');return}
     if(k.id==='oil'&&qty){const o=oilStockFor(fid,base.season,editing?.id);if(o.stored&&qty>o.left+1e-9&&!confirm(`Πουλάς ${nf.format(qty)} κιλά, αλλά σε φύλαξη για αυτή τη χρονιά υπάρχουν ${nf.format(Math.max(0,o.left))} κιλά.\n\nΝα αποθηκευτεί έτσι;`))return}
     d={...base,incomeKind:k.id,qty:k.unit==='κιλά'?qty:0,price:k.unit==='κιλά'?pr:0,amount}}
+  const mf=kind==='work'&&!editing&&fid!==FARM?mfTargets():[];
+  if(mf.length){$('#eSave').disabled=true;
+    try{const ids=[fid,...mf],split=$('#mfMode').value==='split',group=Date.now().toString(36);
+      const scale=(l,k)=>{if(k===1)return {...l};const o={...l,amount:Math.round(l.amount*k*100)/100};if(l.qty)o.qty=Math.round(l.qty*k*1000)/1000;return o};
+      const ops=mfShares(ids).map((x,i)=>({c:'entries',id:null,data:{...d,fieldId:x.id,season:x.id===fid?d.season:seasonAtDate(x.id,d.date),lines:d.lines.map(l=>scale(l,split?x.share:1)),group,createdAt:Date.now()+i}}));
+      // Rounding: the cents left over go to the first field, so the parts add up to what was written.
+      if(split)d.lines.forEach((l,j)=>{const sum=ops.reduce((a,o)=>a+o.data.lines[j].amount,0);ops[0].data.lines[j].amount=Math.round((ops[0].data.lines[j].amount+l.amount-sum)*100)/100});
+      await writeMany(ops);toast(`Καταχωρίστηκε σε ${ids.length} αγροτεμάχια`);resetEntry(fid,d.date);renderEntrySummary()}
+    catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code))}finally{$('#eSave').disabled=false}
+    return}
   $('#eSave').disabled=true;
   try{if(editing){await db.doc('entries/'+editing.id).set({...d,createdAt:editing.createdAt||Date.now()});lastSaved=editing.id}else{const ref=await db.collection('entries').add({...d,createdAt:Date.now()});lastSaved=ref?.id}
     // After a change, back to the Ημερολόγιο where it came from; after a new entry, the next one keeps the same date (handy for old papers).
@@ -881,7 +980,13 @@ function confirmDelete(e){if(e.harvestDone&&!confirm(reopenWarn(e)))return false
   if(MILL.has(e.task)){const sold=[...S.entries.values()].filter(x=>x.kind==='income'&&x.incomeKind==='oil'&&x.fieldId===e.fieldId&&x.season===e.season).length;
     if(sold&&!confirm(`Από αυτή την Άλεση έχουν καταχωριστεί ${sold===1?'1 πώληση':sold+' πωλήσεις'} λαδιού. Οι πωλήσεις μένουν, αλλά δεν θα υπάρχει λάδι σε φύλαξη για αυτές. Να διαγραφεί;`))return false}
   return true}
-function logFor(fid){$('#logField').value=fid;renderLog();go('log')}
+// «Επανάληψη»: the same task, cost lines and note as a new entry dated today; only what differs needs changing.
+function repeatEntry(id){const e=S.entries.get(id);if(!e)return;editEntry(id);
+  editing=null;seasonTouched=false;$('#entryTitle').textContent='Νέα καταχώριση (επανάληψη)';$('#eCancel').hidden=true;$('#eDelete').hidden=true;
+  $('#eDate').value=today();syncEntryForm(true);
+  if(e.kind==='income'){$('#iQty').value='';$('#iAmount').value='';incomeHint()}
+  toast('Αντιγράφηκε με σημερινή ημερομηνία. Άλλαξε ό,τι διαφέρει και πάτα Αποθήκευση.')}
+function logFor(fid){$('#logField').value=fid;$('#logSearch').value='';renderLog();go('log')}
 
 /* ---------- exports ---------- */
 // Excel dates as plain day numbers (no time part, no time-zone drift).
@@ -974,6 +1079,7 @@ function go(t){tab=t;
   document.querySelectorAll('#tabs button').forEach(b=>{if(b.dataset.tab===t)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
   document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!=='tab-'+t);window.scrollTo({top:0})}
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.tab==='entry'&&!editing)resetEntry($('#eField').value);go(b.dataset.tab)};
+$('#mfOn').onchange=()=>{$('#mfBox').hidden=!$('#mfOn').checked;mfHint()};$('#mfList').onchange=mfHint;$('#mfMode').onchange=mfHint;
 $('#kindWork').onclick=()=>setKind('work');$('#kindIncome').onclick=()=>setKind('income');
 $('#eField').onchange=()=>{seasonTouched=false;if(!editing){$('#eLines').innerHTML='';syncEntryForm(true);addLine(defaultLine())}else syncEntryForm(true)};$('#eDate').onchange=()=>{if(!editing)syncEntryForm(true)};
 (function(){const h=$('#eDate'),t=$('#eDateTxt'),pk=$('#eDatePick'),d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
@@ -992,7 +1098,7 @@ $('#eTask').onchange=syncTask;$('#iKind').onchange=syncIncome;
 $('#addLine').onclick=()=>addLine(defaultLine());$('#entryForm').noValidate=true;$('#entryForm').onsubmit=saveEntry;$('#eCancel').onclick=()=>{resetEntry();go('log')};$('#eDelete').onclick=deleteEntry;
 $('#logList').onclick=logAction;$('#logList').onkeydown=e=>{if(e.key==='Enter'&&e.target.matches('.item[data-act]')){e.preventDefault();logAction(e);return}
   const row=e.target.closest('.dline.editing');if(!row)return;
-  if(e.key==='Enter'){e.preventDefault();row.querySelector('[data-act=lsave]')?.click()}else if(e.key==='Escape'){e.preventDefault();lineEdit=null;renderLog()}};$('#logField').onchange=renderLog;$('#logSeason').onchange=renderLog;$('#repSeason').onchange=renderReports;
+  if(e.key==='Enter'){e.preventDefault();row.querySelector('[data-act=lsave]')?.click()}else if(e.key==='Escape'){e.preventDefault();lineEdit=null;renderLog()}};$('#logField').onchange=renderLog;$('#logSearch').oninput=renderLog;$('#logSeason').onchange=renderLog;$('#repSeason').onchange=renderReports;
 $('#newField').onclick=()=>openFieldForm();$('#kmlFile').onchange=e=>{const f=e.target.files[0];if(f)handleKml(f);e.target.value=''};
 $('#kmlExport').onclick=exportKml;$('#pdfExport').onclick=exportPdf;$('#xlsxExport').onclick=exportXlsx;
 for(const id of ['mKgFruit','mKgOil','mKept','mHome'])$('#'+id).addEventListener('input',syncMill);
@@ -1009,7 +1115,8 @@ document.addEventListener('blur',e=>{if(e.target.inputMode==='decimal')normTyped
 {const fix=r=>r.querySelectorAll('input[type=number]').forEach(i=>{i.type='text';if(!i.inputMode)i.inputMode='decimal'});fix(document);
   new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1){if(n.matches('input[type=number]'))fix(n.parentNode);else fix(n)}}).observe(document.body,{childList:true,subtree:true})}
 $('#sTheme').value=getTheme();$('#sTheme').onchange=e=>{const t=e.target.value;try{localStorage.setItem('agrologio-theme',t)}catch{}applyTheme(t)};
-$('#setForm').addEventListener('input',e=>{if(e.target.id!=='sTheme')$('#setDirty').hidden=false});
+$('#sSize').value=getSize();$('#sSize').onchange=e=>{const v=e.target.value;try{localStorage.setItem('agrologio-size',v)}catch{}applySize(v)};
+$('#setForm').addEventListener('input',e=>{if(e.target.id!=='sTheme'&&e.target.id!=='sSize')$('#setDirty').hidden=false});
 $('#setForm').onsubmit=async e=>{e.preventDefault();const d={hiredDayRate:num($('#sHired').value),familyDayRate:num($('#sFamily').value),subsidy:{olive:num($('#sSubOlive').value),vine:num($('#sSubVine').value)},millPct:num($('#sMillPct').value)};
   if(d.millPct<0||d.millPct>=100){toast('Το ποσοστό του ελαιουργείου πρέπει να είναι από 0 έως 99 %');$('#sMillPct').focus();return}
   if([d.hiredDayRate,d.familyDayRate,d.subsidy.olive,d.subsidy.vine].some(v=>v<0)){toast('Οι αριθμοί δεν μπορεί να είναι αρνητικοί');return}
@@ -1053,7 +1160,7 @@ async function importBackup(file){const box=$('#bkConfirm');let o;
   box.innerHTML=`<span>Το αρχείο${when} έχει <b>${fields.length}</b> ${fields.length===1?'αγροτεμάχιο':'αγροτεμάχια'} και <b>${entries.length}</b> ${entries.length===1?'καταχώριση':'καταχωρίσεις'}.${bad?` <b class="neg">${bad===1?'1 χαλασμένη εγγραφή θα αγνοηθεί':bad+' χαλασμένες εγγραφές θα αγνοηθούν'}.</b>`:''}</span>
     <label class="check"><input type="radio" name="bkMode" value="merge" checked> <span><b>Πρόσθεση</b>: μπαίνουν όσα λείπουν και ενημερώνονται όσα υπάρχουν και στο αρχείο. Ό,τι πρόσθεσες μετά το αντίγραφο μένει.</span></label>
     <label class="check"><input type="radio" name="bkMode" value="replace"> <span><b>Αντικατάσταση όλων</b>: η εφαρμογή γυρνά ακριβώς όπως ήταν στο αντίγραφο. Ό,τι δεν υπάρχει στο αρχείο σβήνεται.</span></label>
-    ${sets?'<label class="check"><input type="checkbox" id="bkSettings"> Να περάσουν και οι ρυθμίσεις του αρχείου (μεροκάματα, επιδοτήσεις, ελαιουργείο). Αλλιώς μένουν οι τωρινές.</label>':''}
+    ${sets?`<label class="check"><input type="checkbox" id="bkSettings"${S.settingsSaved?'':' checked'}> Να περάσουν και οι ρυθμίσεις του αρχείου (μεροκάματα, επιδοτήσεις, ελαιουργείο). Αλλιώς μένουν οι τωρινές.</label>`:''}
     <p class="note">${native?'Πριν την εισαγωγή κρατιέται αυτόματα αντίγραφο της τωρινής κατάστασης (Αρχείο → Άνοιγμα φακέλου δεδομένων → backups).':'Αν θέλεις να μπορείς να γυρίσεις πίσω, πάρε πρώτα <button type="button" class="linkbtn" id="bkFirst">αντίγραφο της τωρινής κατάστασης</button>.'}</p>
     <div class="row"><button class="primary" id="bkGo">Εισαγωγή</button><button id="bkNo">Ακύρωση</button><span class="note" id="bkProg"></span></div>`;
   $('#bkFirst')&&($('#bkFirst').onclick=exportBackup);
@@ -1089,7 +1196,7 @@ function openWipe(){const all=true;const phrase='ΔΙΑΓΡΑΦΗ ΟΛΩΝ';
     try{if(window.katastixoNative?.reset){await window.katastixoNative.reset();location.reload();return}
       for(const id of [...S.entries.keys()])await db.doc('entries/'+id).delete();
       if(all){for(const id of [...S.fields.keys()])await db.doc('fields/'+id).delete();await db.doc('settings/main').delete()}
-      box.hidden=true;box.innerHTML='';logOpen.clear();lineEdit=null;logConfirm=null;lastSaved=null;editing=null;$('#fieldFormCard').hidden=true;$('#kmlImport').hidden=true;$('#bkConfirm').hidden=true;$('#logField').value='';$('#logSeason').value='';$('#repSeason').value='closed';resetEntry();go('home');toast('Όλα τα δεδομένα διαγράφηκαν. Η εφαρμογή ξεκινάει από την αρχή.')}
+      box.hidden=true;box.innerHTML='';$('#logSearch').value='';try{localStorage.removeItem('agrologio-guide-off')}catch{}logOpen.clear();lineEdit=null;logConfirm=null;lastSaved=null;editing=null;$('#fieldFormCard').hidden=true;$('#kmlImport').hidden=true;$('#bkConfirm').hidden=true;$('#logField').value='';$('#logSeason').value='';$('#repSeason').value='closed';resetEntry();go('home');toast('Όλα τα δεδομένα διαγράφηκαν. Η εφαρμογή ξεκινάει από την αρχή.')}
     catch(e){toast('Η διαγραφή σταμάτησε: '+(e.message||e.code));goBtn.disabled=false;goBtn.textContent='Οριστική διαγραφή'}}}
 $('#wipeStart').onclick=openWipe;
 /* ---------- boot ---------- */
@@ -1103,6 +1210,6 @@ resetEntry();render();
   const fail=e=>{$('#status').textContent='Σφάλμα φόρτωσης: '+(e?.message||e?.code||'')};
   db.collection('fields').onSnapshot(q=>{S.fields=new Map(q.docs.map(d=>[d.id,d.data()]).filter(([,f])=>validField(f)));S.loaded.f=true;if(!bulkBusy)render()},fail);
   db.collection('entries').onSnapshot(q=>{S.entries=new Map(q.docs.map(d=>[d.id,d.data()]).filter(([,e])=>!!e&&typeof e==='object'&&isDate(e.date)));S.loaded.e=true;if(!bulkBusy)render()},fail);
-  db.doc('settings/main').onSnapshot(d=>{S.settings={...DEFAULT_SETTINGS,...(d.exists?d.data():{})};S.loaded.s=true;if(!bulkBusy)render()},fail);
+  db.doc('settings/main').onSnapshot(d=>{S.settings={...DEFAULT_SETTINGS,...(d.exists?d.data():{})};S.settingsSaved=!!d.exists;S.loaded.s=true;if(!bulkBusy)render()},fail);
 })();
 </script>
