@@ -78,11 +78,12 @@ input,select,textarea{font:400 1rem var(--f-body);color:var(--ink);background:va
 textarea{min-height:60px;resize:vertical}
 .check{display:flex;gap:8px;align-items:center;font-size:.92rem}
 .mflist{display:flex;flex-wrap:wrap;gap:6px 16px}
-ol.steps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}ol.steps li{display:flex;gap:12px;align-items:flex-start}ol.steps li p{margin:2px 0 8px}ol.steps li.done{opacity:.7}.stepn{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--sunk);color:var(--muted)}li.now .stepn{background:var(--accent);color:var(--accent-ink)}li.done .stepn{color:var(--good)}
+ol.steps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}ol.steps li{display:flex;gap:12px;align-items:flex-start}ol.steps li p{margin:2px 0 8px}ol.steps li.done{opacity:.85}.stepn{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--sunk);color:var(--muted)}li.now .stepn{background:var(--accent);color:var(--accent-ink)}li.done .stepn{color:var(--good)}
 #lmap{height:clamp(420px,62vh,640px);border-radius:var(--r);background:var(--sunk);z-index:0}@media (max-width:700px){#lmap{height:320px}}
 .lmlbl{background:rgba(18,22,14,.82);color:#fff;border:0;border-radius:6px;box-shadow:none;font:600 12px var(--f-body);padding:3px 7px;text-align:center;line-height:1.3}.lmlbl::before{display:none}.lmlbl small{display:block;font-weight:500;opacity:.85}
 .leaflet-container{font:12px var(--f-body)}.lmall{background:#fff;color:#222;border:2px solid rgba(0,0,0,.2);border-radius:4px;font:700 13px var(--f-body);padding:5px 9px;min-height:0;cursor:pointer;box-shadow:none}.lmall:hover{background:#f4f4f4}.leaflet-control-layers label{padding:2px 0;color:#222}.leaflet-control-layers label>span{display:flex;gap:6px;align-items:center}.leaflet-control-layers input{width:auto;min-height:0;margin:0;padding:0}.leaflet-control-layers-list,.leaflet-control-layers-expanded{max-height:none!important;overflow:visible!important;padding-right:10px}
 .areas .areagrid{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:flex-end}.areas .areagrid>div{display:flex;flex-direction:column;gap:4px}.areanum{font:700 1.15rem var(--f-display);font-variant-numeric:tabular-nums}
+div.fmwrap{position:relative}.fmzoom{position:absolute;top:8px;right:8px;display:flex;gap:4px}.fmzoom button{min-width:38px;min-height:38px;padding:4px 10px;font-weight:700;background:var(--surface)}
 svg.fmap{width:100%;height:auto;display:block;margin:8px 0;background:var(--sunk);border-radius:var(--r)}svg.fmap .fm{cursor:pointer}svg.fmap .fm:hover path,svg.fmap .fm:hover circle,svg.fmap .fm:focus path,svg.fmap .fm:focus circle{stroke-width:3}svg.fmap .fm:focus{outline:none}svg.fmap .fmname{font:600 12px var(--f-body);fill:var(--ink);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}svg.fmap .fmval{font:500 11px var(--f-body);fill:var(--muted);paint-order:stroke;stroke:var(--sunk);stroke-width:3px}
 svg.cmp{width:100%;height:auto;display:block;margin:6px 0}svg.cmp .cbase{stroke:var(--field-line);stroke-width:1}svg.cmp .cval{font:600 11px var(--f-body);fill:var(--ink)}svg.cmp .clab{font:500 10.5px var(--f-body);fill:var(--muted)}svg.cmp .cbar:hover path{filter:brightness(1.15)}
 .note.warn{color:var(--warn);font-weight:600}
@@ -171,6 +172,7 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
 @media (prefers-reduced-motion:no-preference){.card,.item{transition:background .15s}}
 #millPart input[readonly]{background:transparent;border-style:dashed;font-weight:600}
 .datebox{position:relative;display:flex}.datebox #eDateTxt{flex:1;min-width:0;padding-right:42px}#eDateBtn{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:none;box-shadow:none;padding:6px;min-height:0;color:var(--muted,inherit);cursor:pointer}#eDatePick{position:absolute;right:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
+.synchelp summary{cursor:pointer}.synchelp ol{margin:6px 0 0;padding-left:20px}.synchelp li{margin:3px 0}
 .prod{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--sunk)}.prod .unit{display:flex;gap:6px;border:0;background:none;overflow:visible}.prod .unit input{flex:1;min-width:0;text-align:left}.prod .unit select{width:auto}
 .setrow.themerow{grid-template-columns:1fr minmax(0,240px)}@media (max-width:560px){.setrow.themerow{grid-template-columns:1fr}}
 html{scroll-padding-top:136px}@media (max-width:760px){html{scroll-padding-top:170px}}.themerow .unit{border:0;background:none}.themerow select{width:100%}
@@ -253,7 +255,7 @@ html{scroll-padding-top:136px}@media (max-width:760px){html{scroll-padding-top:1
             <div class="fields">
               <label class="f">Κιλά καρπού<input id="mKgFruit" type="number" min="0" step="any" inputmode="decimal"></label>
               <label class="f">Λάδι που βγήκε (κιλά)<input id="mKgOil" type="number" min="0" step="any" inputmode="decimal"></label>
-              <label class="f">Κράτηση ελαιουργείου (κιλά)<input id="mKept" type="number" min="0" step="any" inputmode="decimal"></label>
+              <label class="f">Κράτηση ελαιουργείου (κιλά)<input id="mKept" type="text" inputmode="decimal"></label>
               <label class="f">Υπόλοιπο λαδιού (κιλά)<input id="mRest" type="text" readonly tabindex="-1"></label>
               <label class="f">Για το σπίτι (κιλά)<input id="mHome" type="number" min="0" step="any" inputmode="decimal"></label>
               <label class="f">Σε φύλαξη (κιλά)<input id="mStored" type="text" readonly tabindex="-1"></label>
@@ -357,6 +359,11 @@ html{scroll-padding-top:136px}@media (max-width:760px){html{scroll-padding-top:1
     <div class="card setcard">
       <h2>Αντίγραφο ασφαλείας</h2>
       <p class="note">Αποθηκεύει όλα τα αγροτεμάχια, τις καταχωρίσεις και τις ρυθμίσεις σε ένα αρχείο. Με το ίδιο αρχείο τα περνάς και στο πρόγραμμα του υπολογιστή.</p>
+      <details class="note synchelp"><summary><b>Συγχρονισμός κινητού και υπολογιστή</b></summary><ol>
+        <li>Στη συσκευή όπου έγραψες τελευταία: <b>Εξαγωγή αντιγράφου</b>.</li>
+        <li>Στείλε το αρχείο στην άλλη συσκευή (email, Viber, OneDrive, στικάκι).</li>
+        <li>Εκεί: <b>Εισαγωγή αντιγράφου</b> και διάλεξε <b>Συγχρονισμός</b>.</li>
+        <li>Αν έγραψες και στις δύο, κάνε το ίδιο και ανάποδα. Όπου άλλαξε κάτι και στις δύο, κρατιέται η πιο πρόσφατη αλλαγή. Ό,τι σβήστηκε στη μία σβήνεται και στην άλλη.</li></ol></details>
       <div class="row"><button type="button" id="bkExport">Εξαγωγή αντιγράφου</button><label class="btn" for="bkFile">Εισαγωγή αντιγράφου</label><input type="file" id="bkFile" accept=".json,application/json" hidden></div>
       <div id="bkConfirm" class="banner" hidden></div>
     </div>
@@ -491,7 +498,38 @@ const fmtDate=d=>d?d.split('-').reverse().join('/'):'';
 const num=v=>{if(typeof v==='number')return isFinite(v)?v:0;let t=String(v??'').trim().replace(/\s/g,'');if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');const n=parseFloat(t);return isFinite(n)?n:0};
 
 let db=null,dbState='loading';
-const S={fields:new Map(),entries:new Map(),settings:{...DEFAULT_SETTINGS},loaded:{f:false,e:false,s:false}};
+const S={fields:new Map(),entries:new Map(),settings:{...DEFAULT_SETTINGS},deleted:{fields:{},entries:{}},loaded:{f:false,e:false,s:false}};
+/* ---------- sync between devices ----------
+   Every deletion of a field or entry leaves a note (id → time) in settings/deleted, so that a copy brought from the other
+   device can tell «deleted here» from «new there». Notes older than two years are dropped. */
+const TOMB_KEEP=2*365*864e5;
+let tombWrite=Promise.resolve();
+function noteTombs(list,clear){if(!db||(!list.length&&!clear?.length))return;const t=Date.now(),d={fields:{...S.deleted.fields},entries:{...S.deleted.entries}};
+  for(const [c,id,tt] of list)if(d[c])d[c][id]=Math.max(num(d[c][id]),tt||t);for(const [c,id] of clear||[])if(d[c])delete d[c][id];
+  for(const c of ['fields','entries'])for(const [id,x] of Object.entries(d[c]))if(t-x>TOMB_KEEP)delete d[c][id];
+  S.deleted=d;tombWrite=tombWrite.then(()=>db.doc('settings/deleted').set({...d,updatedAt:t})).catch(()=>{})}
+// The time a record last changed (older records have only createdAt, or nothing).
+const stampOf=x=>num(x?.updatedAt)||num(x?.createdAt)||0;
+// Bring a copy from the other device: new records come in, a record changed on both keeps the later change,
+// and what was deleted on one side is deleted on the other (unless it was changed here after that).
+const planTxt=n=>{const w=(k,one,many)=>k===1?one:`${k} ${many}`;return [n.add&&w(n.add,'1 νέα εγγραφή','νέες εγγραφές'),n.upd&&w(n.upd,'1 ενημερώνεται','ενημερώνονται'),n.del&&w(n.del,'1 σβήνεται','σβήνονται'),n.keep&&w(n.keep,'1 μένει όπως είναι εδώ (πιο πρόσφατη)','μένουν όπως είναι εδώ (πιο πρόσφατες)')].filter(Boolean).join(', ')||'όλα είναι ήδη ίδια'};
+function syncPlan(fields,entries,tomb){const ops=[],n={add:0,upd:0,keep:0,del:0,same:0},seen=new Set();
+  const one=(c,id,d)=>{seen.add(c+'/'+id);const loc=S[c].get(id),lt=num(S.deleted[c]?.[id]);
+    if(!loc){if(lt&&lt>=stampOf(d)){n.keep++;return}ops.push({c,id,data:d});n.add++;return}
+    if(JSON.stringify(loc)===JSON.stringify(d)){n.same++;return}
+    if(stampOf(loc)>stampOf(d)){n.keep++;return}
+    ops.push({c,id,data:d});n.upd++};
+  for(const [id,d] of fields)one('fields',id,d);for(const [id,d] of entries)one('entries',id,d);
+  const tombs=[];
+  for(const c of ['entries','fields'])for(const [id,t] of Object.entries(tomb?.[c]||{})){if(!num(t))continue;tombs.push([c,id,num(t)]);const loc=S[c].get(id);
+    if(loc&&!seen.has(c+'/'+id)&&num(t)>stampOf(loc)){ops.push({c,id,del:true});n.del++}}
+  return {ops,n,tombs}}
+function wrapDb(raw){const doc=raw.doc.bind(raw);
+  raw.doc=p=>{const r=doc(p);const [c,id]=p.split('/');if(c!=='fields'&&c!=='entries')return r;
+    const del=r.delete.bind(r),set=r.set.bind(r);
+    r.delete=async()=>{await del();noteTombs([[c,id]])};
+    r.set=async d=>{await set(d);if(S.deleted[c]?.[id])noteTombs([],[[c,id]])};return r};
+  return raw}
 let tab='home';
 
 // A short message at the bottom. With undo, it shows an «Αναίρεση» button and stays longer.
@@ -806,7 +844,24 @@ function mapFitAll(anim){if(lmap&&lmapLayer.getLayers().length)lmap.fitBounds(lm
 // «Στον χάρτη» on a field card: scroll up to the map and zoom on that field.
 function mapZoom(id){const g=lmapById.get(id);if(!lmap||!g)return;window.scrollTo({top:$('#fieldMap').getBoundingClientRect().top+scrollY-$('header.top').offsetHeight-12,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   if(g.getBounds)lmap.fitBounds(g.getBounds(),{padding:[60,60],maxZoom:18});else lmap.setView(g.getLatLng(),17);g.openTooltip()}
-function renderFieldMap(fs){const box=$('#fieldMap');const all=stats();
+// Simple map: zoom (buttons, wheel, two fingers) and drag. fz is the view: zoom k around point (cx,cy) of the unzoomed drawing.
+let fz={k:1,cx:null,cy:null},fzLast=null,fzStats=null;
+function fzSet(k,cx,cy){fz={k:Math.min(40,Math.max(1,k)),cx,cy};if(fz.k===1)fz.cx=fz.cy=null;if(fzLast)renderFieldMap(fzLast,true)}
+function fzBind(svg,W,H){if(!svg)return;const pt=e=>{const r=svg.getBoundingClientRect();return [(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*H]};
+  const cur=()=>[fz.cx??W/2,fz.cy??H/2];
+  // screen point → unzoomed drawing point
+  const un=([x,y])=>{const [cx,cy]=cur();return [(x-W/2)/fz.k+cx,(y-H/2)/fz.k+cy]};
+  const zoomAt=(f,p)=>{const u=un(p),k=Math.min(40,Math.max(1,fz.k*f));const [cx,cy]=cur();fzSet(k,u[0]-(u[0]-cx)*fz.k/k,u[1]-(u[1]-cy)*fz.k/k)};
+  svg.addEventListener('wheel',e=>{e.preventDefault();zoomAt(e.deltaY<0?1.25:0.8,pt(e))},{passive:false});
+  const ps=new Map();let start=null,moved=false;
+  svg.addEventListener('pointerdown',e=>{ps.set(e.pointerId,pt(e));moved=false;start={k:fz.k,c:cur(),p:[...ps.values()]};});
+  svg.addEventListener('pointermove',e=>{if(!ps.has(e.pointerId))return;ps.set(e.pointerId,pt(e));const now=[...ps.values()];
+    if(now.length===1&&start?.p.length===1&&fz.k>1){const dx=now[0][0]-start.p[0][0],dy=now[0][1]-start.p[0][1];if(Math.hypot(dx,dy)<4&&!moved)return;moved=true;svg.setPointerCapture?.(e.pointerId);fzSet(fz.k,start.c[0]-dx/fz.k,start.c[1]-dy/fz.k)}
+    else if(now.length===2&&start?.p.length===2){const d0=Math.hypot(start.p[0][0]-start.p[1][0],start.p[0][1]-start.p[1][1]),d1=Math.hypot(now[0][0]-now[1][0],now[0][1]-now[1][1]);if(d0>0){moved=true;fz={...fz,k:start.k};zoomAt(d1/d0,[(now[0][0]+now[1][0])/2,(now[0][1]+now[1][1])/2])}}});
+  const up=e=>{ps.delete(e.pointerId);if(!ps.size)start=null};svg.addEventListener('pointerup',up);svg.addEventListener('pointercancel',up);
+  // A drag must not open the field under the finger.
+  svg.addEventListener('click',e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false}},true)}
+function renderFieldMap(fs,reuse){const box=$('#fieldMap');const all=reuse&&fzStats||stats();fzStats=all;fzLast=fs;
   const items=fs.map(f=>{const c=parseCoords(f.boundary);const p=fieldPoint(f);if(!p)return null;
     const ss=all.filter(s=>s.fieldId===f.id).sort((a,b)=>a.season-b.season);const s=ss.filter(x=>x.closed).pop()||ss.pop();
     const v=s?(num(f.stremmata)?s.perStr:s.net):0;return {f,c:c.length>=3?c:null,p,s,v,perStr:!!num(f.stremmata)}}).filter(Boolean);
@@ -817,7 +872,10 @@ function renderFieldMap(fs){const box=$('#fieldMap');const all=stats();
   const pts=items.flatMap(it=>(it.c||[it.p]).map(pr));const xs=pts.map(q=>q[0]),ys=pts.map(q=>q[1]);
   const minx=Math.min(...xs),miny=Math.min(...ys),w=Math.max(...xs)-minx||1e-4,h=Math.max(...ys)-miny||1e-4;
   const W=Math.round(Math.min(1400,Math.max(320,innerWidth-80))),Hmax=innerWidth<700?320:340,pad=46,sc=Math.min((W-2*pad)/w,(Hmax-2*pad)/h),H=Math.max(160,Math.round(h*sc+2*pad)),ox=(W-w*sc)/2,oy=(H-h*sc)/2;
-  const xy=q=>{const r=pr(q);return [(r[0]-minx)*sc+ox,(r[1]-miny)*sc+oy]};
+  const fcx=fz.cx??W/2,fcy=fz.cy??H/2;
+  const xy=q=>{const r=pr(q);return [((r[0]-minx)*sc+ox-fcx)*fz.k+W/2,((r[1]-miny)*sc+oy-fcy)*fz.k+H/2]};
+  // Names that would sit on top of another are left out (the field keeps its tooltip); zooming in brings them back.
+  const placed=[];let hidden=0;const fits=(x,y,w)=>{const b=[x-w/2,y,x+w/2,y+30];if(b[2]<0||b[0]>W||b[1]>H||b[3]<0)return true;if(placed.some(o=>b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]))return false;placed.push(b);return true};
   const max=Math.max(1,...items.map(it=>Math.abs(it.v)));
   const shapes=items.map(it=>{const empty=!it.s||(!it.s.cost&&!it.s.sales&&!it.s.otherInc&&it.s.subsidyManual==null);const col=empty?'var(--muted)':it.v>=0?'var(--good)':'var(--bad)';const op=empty?'0.15':(0.3+0.6*Math.abs(it.v)/max).toFixed(2);
     const val=empty?'χωρίς καταχωρίσεις':it.perStr?eur.format(it.v)+' /στρ.':money(it.v);const yr=it.s?seasonName(it.s.season,it.f.crop)+(it.s.closed?'':' (σε εξέλιξη)'):'';
@@ -825,11 +883,18 @@ function renderFieldMap(fs){const box=$('#fieldMap');const all=stats();
     const [cx,cy]=xy(it.p);const bot=big?Math.max(...sp.map(q=>q[1])):cy+9;
     const mark=big?`<path d="${sp.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join('')}Z" fill="${col}" fill-opacity="${op}" stroke="${col}" stroke-width="1.5"/>`:`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="9" fill="${col}" fill-opacity="${op}" stroke="${col}" stroke-width="1.5"/>`;
     return `<g class="fm" data-act="openFieldForm" data-arg="${it.f.id}" tabindex="0" role="button" aria-label="${esc(it.f.name)}: ${val}"><title>${esc(it.f.name)} · ${yr}: ${val}</title>${mark}
-      <text x="${cx.toFixed(1)}" y="${(bot+15).toFixed(1)}" text-anchor="middle" class="fmname">${esc(it.f.name)}</text><text x="${cx.toFixed(1)}" y="${(bot+29).toFixed(1)}" text-anchor="middle" class="fmval">${val}</text></g>`}).join('');
+      ${fits(cx,bot+3,Math.max(it.f.name.length,val.length)*6.6+8)?`<text x="${cx.toFixed(1)}" y="${(bot+15).toFixed(1)}" text-anchor="middle" class="fmname">${esc(it.f.name)}</text><text x="${cx.toFixed(1)}" y="${(bot+29).toFixed(1)}" text-anchor="middle" class="fmval">${val}</text>`:(hidden++,'')}</g>`}).join('');
   const missing=fs.length-items.length;
+  const hidTxt=hidden?` ${hidden===1?'Ένα όνομα κρύφτηκε':hidden+' ονόματα κρύφτηκαν'} για να μην πέφτουν το ένα πάνω στο άλλο. Μεγέθυνε για να τα δεις.`:'';
+  // While zooming or dragging only the drawing changes, so the gesture is not interrupted.
+  {const old=box.querySelector('svg.fmap');if(reuse&&old&&old.getAttribute('viewBox')===`0 0 ${W} ${H}`){old.innerHTML=shapes;old.style.touchAction=fz.k>1?'none':'pan-y';
+    box.querySelectorAll('[data-fz=out],[data-fz=all]').forEach(b=>b.disabled=fz.k===1);const hs=box.querySelector('.fmhid');if(hs)hs.textContent=hidTxt;return}}
   box.hidden=false;box.innerHTML=`<div class="row" style="justify-content:space-between"><h2>Χάρτης αγροτεμαχίων</h2><span class="legend"><span><i style="background:var(--good)"></i>κέρδος</span><span><i style="background:var(--bad)"></i>ζημιά</span><span><i style="background:var(--muted);opacity:.4"></i>χωρίς καταχωρίσεις</span><span>πιο έντονο = μεγαλύτερο ποσό</span></span></div>
-    <svg class="fmap" viewBox="0 0 ${W} ${H}" role="img" aria-label="Χάρτης με όλα τα αγροτεμάχια">${shapes}</svg>
-    <p class="note">Κάθε αγροτεμάχιο δείχνει το καθαρό της τελευταίας ολοκληρωμένης χρονιάς του. Πάτα ένα για να το αλλάξεις.${missing?` ${missing===1?'Ένα αγροτεμάχιο δεν έχει':missing+' αγροτεμάχια δεν έχουν'} θέση και δεν φαίνεται εδώ.`:''}</p>`}
+    <div class="fmwrap"><svg class="fmap" viewBox="0 0 ${W} ${H}" role="group" aria-label="Χάρτης με όλα τα αγροτεμάχια">${shapes}</svg>
+    <div class="fmzoom" role="group" aria-label="Μεγέθυνση χάρτη"><button type="button" data-fz="in" aria-label="Μεγέθυνση">+</button><button type="button" data-fz="out" aria-label="Σμίκρυνση"${fz.k===1?' disabled':''}>−</button><button type="button" data-fz="all"${fz.k===1?' disabled':''}>Όλα</button></div></div>
+    <p class="note">Κάθε αγροτεμάχιο δείχνει το καθαρό της τελευταίας ολοκληρωμένης χρονιάς του. Πάτα ένα για να το αλλάξεις. Μεγέθυνση με τα κουμπιά, τη ρόδα ή δύο δάχτυλα, μετακίνηση σέρνοντας.<span class="fmhid">${hidTxt}</span>${missing?` ${missing===1?'Ένα αγροτεμάχιο δεν έχει':missing+' αγροτεμάχια δεν έχουν'} θέση και δεν φαίνεται εδώ.`:''}</p>`;
+  const svg=box.querySelector('svg.fmap');svg.style.touchAction=fz.k>1?'none':'pan-y';fzBind(svg,W,H);
+  box.querySelectorAll('[data-fz]').forEach(b=>b.onclick=()=>{const a=b.dataset.fz;if(a==='all')fzSet(1);else fzSet(fz.k*(a==='in'?1.6:1/1.6),fz.cx??W/2,fz.cy??H/2);box.querySelector(`[data-fz="${a}"]`)?.focus()})}
 function renderFields(){
   const fs=fieldsSorted();const el=$('#fieldList');renderFieldMap(fs);
   if(!fs.length){el.innerHTML=`<div class="card empty" style="grid-column:1/-1"><p>Δεν έχεις αγροτεμάχια ακόμα. Πρόσθεσε ένα ή φέρε τα όρια από το Google Earth.</p></div>`;return}
@@ -903,7 +968,7 @@ function openFieldForm(id){
 
 let kmlPending=[];
 // Same name as an existing field → that field; otherwise a new field of the crop the file says (default olive).
-function kmDefault(p,fs){const k=x=>String(x||'').trim().toLocaleLowerCase('el');const f=fs.find(f=>k(f.name)===k(p.name));return f?f.id:'new-'+(p.crop||'olive')}
+function kmDefault(p,fs){const k=x=>String(x||'').trim().toLocaleLowerCase('el');const f=fs.find(f=>k(f.name)===k(p.name));return f?f.id:p.coords&&p.coords.length<3?'skip':'new-'+(p.crop||'olive')}
 async function handleKml(file){
   const box=$('#kmlImport');
   try{const pms=parseKml(await readKmlFile(file));if(!pms.length)throw new Error('Δεν βρέθηκαν σημεία ή περιγράμματα στο αρχείο.');kmlPending=pms}
@@ -971,7 +1036,7 @@ function renderReports(){
     <span class="label">Καθαρό κέρδος</span><span class="big ${signCls(c.net)}">${money(c.net)}</span>
     <dl class="kv"><dt>Έσοδα (με επιδότηση)</dt><dd>${money(c.income)}</dd><dt>Έξοδα</dt><dd>${money(c.cost)}</dd>
     <dt>Ανά στρέμμα${multi?' τον χρόνο':''}</dt><dd class="${signCls(c.net)}">${c.str?eur.format(c.net/c.str):'–'}</dd>
-    ${k==='olive'?`<dt>Λάδι</dt><dd>${nf.format(c.kgOil)} κιλά${c.yF?` · απόδοση ${nf.format(c.yO/c.yF*100)}%`:''}</dd>${c.millKept||c.home||c.stored?`<dt>Από το λάδι</dt><dd>κράτηση ${nf.format(c.millKept)} · σπίτι ${nf.format(c.home)} · φύλαξη ${nf.format(c.stored)} κιλά</dd><dt>Πωλήσεις λαδιού</dt><dd>${nf.format(c.oilSoldKg)} κιλά${c.oilSoldKg?` · μέση τιμή ${eur2.format(c.oilSoldAmt/c.oilSoldKg)}/κ.`:''} · απόθεμα <b>${nf.format(c.oilStock)} κιλά</b></dd>`:''}`:`<dt>Σταφύλια</dt><dd>${nf.format(c.kgFruit)} κιλά</dd>`}</dl>
+    ${k==='olive'?`<dt>Λάδι</dt><dd>${nf.format(c.kgOil)} κιλά${c.yF?` · απόδοση ${nf.format(c.yO/c.yF*100)}%`:''}</dd>${c.millKept||c.home||c.stored?`<dt>Από το λάδι</dt><dd>κράτηση ${nf.format(c.millKept)} · σπίτι ${nf.format(c.home)} · φύλαξη ${nf.format(c.stored)} κιλά</dd><dt>Πωλήσεις λαδιού</dt><dd>${nf.format(c.oilSoldKg)} κιλά${c.oilSoldKg?` · μέση τιμή ${eur2.format(c.oilSoldAmt/c.oilSoldKg)}/κ.`:''} · απόθεμα <b>${nf.format(c.oilStock)} κιλά</b></dd>`:''}`:`<dt>${k==='vine'?'Σταφύλια':'Παραγωγή'}</dt><dd>${nf.format(c.kgFruit)} κιλά</dd>`}</dl>
     ${catBar(c.byCat)}</div>`).join('')}</div>
   ${compareHtml()}
   <h2>Ανά αγροτεμάχιο και χρονιά</h2>
@@ -1091,7 +1156,7 @@ function mfHint(){const ids=[$('#eField').value,...mfTargets()];if(ids.length<2)
   const tot=readLines().reduce((a,l)=>a+l.amount,0);const split=$('#mfMode').value==='split';
   $('#mfHint').textContent=`Θα γραφτούν ${ids.length} καταχωρίσεις, μία σε κάθε αγροτεμάχιο`+(tot?': '+mfShares(ids).map(x=>`${S.fields.get(x.id).name} ${eur2.format(split?tot*x.share:tot)}`).join(' · '):'.')}
 function syncMill(){const pct=millPct(),oil=num($('#mKgOil').value),fruit=num($('#mKgFruit').value),k=$('#mKept');
-  if(pct>0){k.readOnly=true;k.value=oil?r1(oil*pct/100):'';$('#mKeptHint').textContent=`Η κράτηση υπολογίζεται αυτόματα: ${nf.format(pct)}% από την Κάρτα Ελαιουργείου.`}
+  if(pct>0){k.readOnly=true;k.value=oil?String(r1(oil*pct/100)).replace('.',','):'';$('#mKeptHint').textContent=`Η κράτηση υπολογίζεται αυτόματα: ${nf.format(pct)}% από την Κάρτα Ελαιουργείου.`}
   else{k.readOnly=false;$('#mKeptHint').textContent='Γράψε τα κιλά της κράτησης, ή βάλε ποσοστό στις Ρυθμίσεις → Κάρτα Ελαιουργείου.'}
   const rest=r1(oil-num(k.value)),home=num($('#mHome').value),stored=r1(rest-home);
   $('#mRest').value=oil?nf.format(rest):'';$('#mStored').value=oil?nf.format(stored):'';
@@ -1186,7 +1251,7 @@ async function saveEntry(ev){ev.preventDefault();if(!db)return;const fid=$('#eFi
       Object.assign(d,{kgFruit:num($('#mKgFruit').value),kgOil:oil,millKeptKg:kept,millPct:millPct()||null,homeKg:home,storedKg:r1(oil-kept-home)})}}
   else{const k=INC[$('#iKind').value];let amount=num($('#iAmount').value);const qty=num($('#iQty').value),price=num($('#iPrice').value);if(k.unit==='κιλά'&&!amount)amount=Math.round(qty*price*100)/100;let pr=price;if(k.unit==='κιλά'&&qty&&amount)pr=Math.round(amount/qty*1000)/1000;
     if(!amount){toast('Βάλε ποσό ή κιλά και τιμή');return}
-    if(k.id==='oil'&&qty){const o=oilStockFor(fid,base.season,editing?.id);if(o.stored&&qty>o.left+1e-9&&!confirm(`Πουλάς ${nf.format(qty)} κιλά, αλλά σε φύλαξη για αυτή τη χρονιά υπάρχουν ${nf.format(Math.max(0,o.left))} κιλά.\n\nΝα αποθηκευτεί έτσι;`))return}
+    if(k.id==='oil'&&qty){const o=oilStockFor(fid,base.season,editing?.id);if(!o.stored&&!editing&&!confirm(`Δεν υπάρχει Άλεση για τη χρονιά ${seasonName(base.season,'olive')} σε αυτό το αγροτεμάχιο, άρα δεν φαίνεται από πού βγαίνει το λάδι.\n\nΝα αποθηκευτεί η πώληση έτσι;`))return;if(o.stored&&qty>o.left+1e-9&&!confirm(`Πουλάς ${nf.format(qty)} κιλά, αλλά σε φύλαξη για αυτή τη χρονιά υπάρχουν ${nf.format(Math.max(0,o.left))} κιλά.\n\nΝα αποθηκευτεί έτσι;`))return}
     d={...base,incomeKind:k.id,qty:k.unit==='κιλά'?qty:0,price:k.unit==='κιλά'?pr:0,amount};if(SALE_KINDS.has(k.id)){d.buyer=$('#iBuyer').value.trim();d.invoice=$('#iInvoice').value.trim()}}
   const mf=kind==='work'&&!editing&&fid!==FARM?mfTargets():[];
   if(mf.length){$('#eSave').disabled=true;
@@ -1277,7 +1342,7 @@ async function exportPdf(){
     for(const s of st.filter(x=>x.fieldId===f.id)){
       if(y>200){doc.addPage('a4','portrait');y=18} // a year's summary is not split across pages
       doc.setFont('DV','bold');doc.setFontSize(12);doc.text(`Χρονιά ${seasonName(s.season,f.crop)} · ${s.closed?'Ολοκληρώθηκε':'Σε εξέλιξη'}`,14,y+4);doc.setFont('DV','normal');
-      const prod=f.crop==='olive'?`${nf.format(s.kgFruit)} κιλά καρπού · ${nf.format(s.kgOil)} κιλά λαδιού${s.kgFruit&&s.kgOil?` (απόδοση ${nf.format(s.kgOil/s.kgFruit*100)}%)`:''}${s.millKept||s.home||s.stored?` · κράτηση ${nf.format(s.millKept)} · σπίτι ${nf.format(s.home)} · φύλαξη ${nf.format(s.stored)} κιλά · πουλήθηκαν ${nf.format(s.oilSoldKg)}${s.oilAvg?` (${eur2.format(s.oilAvg)}/κ.)`:''} · απόθεμα ${nf.format(s.oilStock)} κιλά`:''}`:`${nf.format(s.kgFruit)} κιλά σταφυλιών`;
+      const prod=f.crop==='olive'?`${nf.format(s.kgFruit)} κιλά καρπού · ${nf.format(s.kgOil)} κιλά λαδιού${s.kgFruit&&s.kgOil?` (απόδοση ${nf.format(s.kgOil/s.kgFruit*100)}%)`:''}${s.millKept||s.home||s.stored?` · κράτηση ${nf.format(s.millKept)} · σπίτι ${nf.format(s.home)} · φύλαξη ${nf.format(s.stored)} κιλά · πουλήθηκαν ${nf.format(s.oilSoldKg)}${s.oilAvg?` (${eur2.format(s.oilAvg)}/κ.)`:''} · απόθεμα ${nf.format(s.oilStock)} κιλά`:''}`:`${nf.format(s.kgFruit)} κιλά ${f.crop==='vine'?'σταφυλιών':'παραγωγής'}`;
       T({startY:y+7,theme:'plain',styles:{font:'DV',fontSize:9.5,cellPadding:1.4},columnStyles:{0:{cellWidth:72},1:{halign:'right'}},tableWidth:120,
         body:[['Έξοδα',pm(s.cost)],['εκ των οποίων οικογενειακή εργασία',pm(s.family)],...(s.shared?[['εκ των οποίων κοινά έξοδα (μερίδιο)',pm(s.shared)]]:[]),['Πωλήσεις και άλλα έσοδα',pm(s.sales+s.otherInc)],['Επιδότηση'+(s.subsidyIsEst?' (εκτίμηση)':''),pm(s.subsidy)],
           [{content:'Καθαρό κέρδος',styles:{fontStyle:'bold'}},{content:pm(s.net),styles:{fontStyle:'bold',textColor:s.net<0?[171,54,40]:[42,116,67]}}],
@@ -1319,11 +1384,13 @@ $('#kindWork').onclick=()=>setKind('work');$('#kindIncome').onclick=()=>setKind(
 $('#eField').onchange=()=>{seasonTouched=false;if(!editing){$('#eLines').innerHTML='';syncEntryForm(true);addLine(defaultLine())}else syncEntryForm(true)};$('#eDate').onchange=()=>{if(!editing)syncEntryForm(true)};
 (function(){const h=$('#eDate'),t=$('#eDateTxt'),pk=$('#eDatePick'),d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
   Object.defineProperty(h,'value',{get(){return d.get.call(h)},set(v){d.set.call(h,v);t.value=fmtDate(v);pk.value=v||'';t.setCustomValidity('')}});
-  const parse=(x,final)=>{x=x.trim();const iso8=x.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(iso8)x=`${iso8[3]}/${iso8[2]}/${iso8[1]}`;const m=x.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2}|\d{4})$/);if(!m)return '';let [,dd,mm,yy]=m;if(yy.length===2){if(!final)return '';yy='20'+yy}
+  const parse=(x,final)=>{x=x.trim();const iso8=x.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(iso8)x=`${iso8[3]}/${iso8[2]}/${iso8[1]}`;
+    // «5/11» without a year: this year (read when leaving the field).
+    if(final&&/^\d{1,2}[\/.\-]\d{1,2}$/.test(x))x+='/'+new Date().getFullYear();const m=x.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2}|\d{4})$/);if(!m)return '';let [,dd,mm,yy]=m;if(yy.length===2){if(!final)return '';yy='20'+yy}
     const iso=`${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`,o=new Date(+yy,+mm-1,+dd);return o.getDate()===+dd&&o.getMonth()===+mm-1?iso:''};
   const set=iso=>{if(iso===d.get.call(h))return;d.set.call(h,iso);pk.value=iso;h.dispatchEvent(new Event('change'))};
   t.addEventListener('input',e=>{if(t.value!==t.value.trim())t.value=t.value.trim();let v=t.value;if(/^[\d\/]*$/.test(v)&&[...v].every((c,i)=>c!=='/'||i===2||i===5)){const g=v.replace(/\D/g,'').slice(0,8);v=g.length>4?g.slice(0,2)+'/'+g.slice(2,4)+'/'+g.slice(4):g.length>2?g.slice(0,2)+'/'+g.slice(2):g;if(e.inputType!=='deleteContentBackward')t.value=v}
-    const iso=parse(t.value);t.setCustomValidity(iso||!t.value||/^\d{1,2}\/\d{1,2}\/\d{2}$/.test(t.value)?'':'Γράψε την ημερομηνία ως ΗΗ/ΜΜ/ΕΕΕΕ');if(iso)set(iso)});
+    const iso=parse(t.value);t.setCustomValidity(iso||!t.value||/^\d{1,2}\/\d{1,2}(\/\d{2})?$/.test(t.value)?'':'Γράψε την ημερομηνία ως ΗΗ/ΜΜ/ΕΕΕΕ');if(iso)set(iso)});
   // A two-digit year (05/11/26) is read only when you leave the field, so typing «2026» never passes through 2020.
   t.addEventListener('blur',()=>{const iso=parse(t.value,true);if(iso){t.value=fmtDate(iso);t.setCustomValidity('');set(iso)}});
   $('#eDateBtn').onclick=()=>{pk.value=d.get.call(h)||today();try{pk.showPicker()}catch{pk.focus()}};
@@ -1347,6 +1414,11 @@ const THOUS=/^[1-9]\d{0,2}(\.\d{3})+$/;
 const UNIT_PRICE=i=>i.classList.contains('lp')||i.id==='iPrice';
 function normTyped(i){if(i.dataset.typed&&!UNIT_PRICE(i)&&THOUS.test(i.value.trim())){i.value=i.value.trim().replace(/\./g,'');i.dispatchEvent(new Event('input',{bubbles:true}))}}
 document.addEventListener('submit',e=>e.target.querySelectorAll('input').forEach(normTyped),true);
+document.addEventListener('invalid',e=>{const t=e.target,v=t.validity;if(!v||v.customError&&!t.dataset.gv)return;
+  const m=v.valueMissing?'Συμπλήρωσε αυτό το πεδίο':v.rangeUnderflow?`Ο αριθμός πρέπει να είναι τουλάχιστον ${t.min}`:v.rangeOverflow?`Ο αριθμός πρέπει να είναι έως ${t.max}`:v.badInput||v.typeMismatch||v.stepMismatch?'Γράψε έναν σωστό αριθμό':'';
+  if(m){t.dataset.gv=1;t.setCustomValidity(m)}},true);
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset?.gv){delete t.dataset.gv;t.setCustomValidity('')}},true);
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset?.gv){delete t.dataset.gv;t.setCustomValidity('')}},true);
 document.addEventListener('input',e=>{if(e.target.inputMode==='decimal'||e.target.inputMode==='numeric')e.target.dataset.typed=1},true);
 document.addEventListener('blur',e=>{if(e.target.inputMode==='decimal'||e.target.inputMode==='numeric')normTyped(e.target)},true);
 {const fix=r=>r.querySelectorAll('input[type=number]').forEach(i=>{i.type='text';if(!i.inputMode)i.inputMode='decimal'});fix(document);
@@ -1363,7 +1435,7 @@ $('#setForm').onsubmit=async e=>{e.preventDefault();const d={hiredDayRate:num($(
   const by=JSON.parse(JSON.stringify(S.settings.subsidyBySeason||{}));
   for(const c of cropsInUse()){const old=num(S.settings.subsidy?.[c]);if(old!==d.subsidy[c])for(const y of pastYears(c))if(by[y]?.[c]==null)(by[y]??={})[c]=old}
   for(const i of document.querySelectorAll('#subYears .subY')){const v=num(i.value);if(v<0){toast('Οι αριθμοί δεν μπορεί να είναι αρνητικοί');i.focus();return}(by[i.dataset.y]??={})[i.dataset.c]=v}
-  d.subsidyBySeason=by;
+  d.subsidyBySeason=by;d.updatedAt=Date.now();
   try{await db.doc('settings/main').set({...S.settings,...d});$('#setDirty').hidden=true;document.activeElement.blur();toast('Οι ρυθμίσεις αποθηκεύτηκαν')}catch(err){toast('Δεν αποθηκεύτηκαν: '+(err.message||err.code))}};
 $('#delExamples').onclick=async e=>{const b=e.target;if(!b.dataset.sure){b.dataset.sure=1;b.textContent='Σίγουρα; Πάτα ξανά';return}b.disabled=true;
   for(const [id,x] of S.entries)if(x.example)await db.doc('entries/'+id).delete();for(const [id,x] of S.fields)if(x.example)await db.doc('fields/'+id).delete();toast('Τα παραδείγματα σβήστηκαν');b.disabled=false;b.textContent='Διαγραφή παραδειγμάτων';delete b.dataset.sure};
@@ -1371,14 +1443,16 @@ $('#delExamples').onclick=async e=>{const b=e.target;if(!b.dataset.sure){b.datas
 
 /* ---------- many writes at once ---------- */
 // ops: {c,id,data} to write (id null = new) or {c,id,del:true}. The desktop writes them in one go; the web one by one without redrawing each time.
-let bulkBusy=false;
+let bulkBusy=false,rawRef=null;
 async function writeMany(ops,onProgress){bulkBusy=true;
-  try{if(db.bulk){onProgress?.(0,ops.length);await db.bulk(ops);return}
-    let i=0;for(const o of ops){const ref=o.id?db.doc(o.c+'/'+o.id):db.collection(o.c).doc();if(o.del)await ref.delete();else await ref.set(o.data);if(++i%20===0)onProgress?.(i,ops.length)}}
+  const gone=ops.filter(o=>o.del&&o.id&&(o.c==='fields'||o.c==='entries')).map(o=>[o.c,o.id]),back=ops.filter(o=>!o.del&&o.id&&S.deleted[o.c]?.[o.id]).map(o=>[o.c,o.id]);
+  try{if(db.bulk){onProgress?.(0,ops.length);await db.bulk(ops);noteTombs(gone,back);return}
+    // One note for the whole batch, not one write per deletion.
+    let i=0;for(const o of ops){const ref=o.id?rawRef(o.c+'/'+o.id):db.collection(o.c).doc();if(o.del)await ref.delete();else await ref.set(o.data);if(++i%20===0)onProgress?.(i,ops.length)}noteTombs(gone,back)}
   finally{bulkBusy=false;memo.clear();render()}}
 
 /* ---------- backup ---------- */
-async function exportBackup(){const o={app:'katastixo',version:1,exportedAt:new Date().toISOString(),fields:Object.fromEntries(S.fields),entries:Object.fromEntries(S.entries),settings:S.settings};
+async function exportBackup(){const o={app:'katastixo',version:2,exportedAt:new Date().toISOString(),fields:Object.fromEntries(S.fields),entries:Object.fromEntries(S.entries),settings:S.settings,deleted:S.deleted};
   const ok=await saveFile(`Agrologio_antigrafo_${today()}.json`,JSON.stringify(o,null,1));if(ok)toast('Το αντίγραφο αποθηκεύτηκε');return ok}
 // Records that the app can show safely. Anything else is skipped (on import) or ignored (on load), so a bad record cannot lock the app.
 const isDate=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d);
@@ -1397,9 +1471,9 @@ async function importBackup(file){const box=$('#bkConfirm');let o;
   const ed=new Date(o.exportedAt||'');const when=isFinite(ed)?` (αντίγραφο της ${fmtDate(localIso(ed))})`:'';
   box.hidden=false;
   if(!fields.length&&!entries.length){box.hidden=false;box.innerHTML=`<span class="neg">Το αρχείο δεν έχει καμία σωστή εγγραφή για εισαγωγή${bad?` (${bad===1?'1 χαλασμένη':bad+' χαλασμένες'})`:''}. Δεν άλλαξε τίποτα.</span>`;return}
-  const native=!!window.katastixoNative?.backup;
+  const native=!!window.katastixoNative?.backup;const plan=syncPlan(fields,entries,o.deleted);
   box.innerHTML=`<span>Το αρχείο${when} έχει <b>${fields.length}</b> ${fields.length===1?'αγροτεμάχιο':'αγροτεμάχια'} και <b>${entries.length}</b> ${entries.length===1?'καταχώριση':'καταχωρίσεις'}.${bad?` <b class="neg">${bad===1?'1 χαλασμένη εγγραφή θα αγνοηθεί':bad+' χαλασμένες εγγραφές θα αγνοηθούν'}.</b>`:''}</span>
-    <label class="check"><input type="radio" name="bkMode" value="merge" checked> <span><b>Πρόσθεση</b>: μπαίνουν όσα λείπουν και ενημερώνονται όσα υπάρχουν και στο αρχείο. Ό,τι πρόσθεσες μετά το αντίγραφο μένει.</span></label>
+    <label class="check"><input type="radio" name="bkMode" value="merge" checked> <span><b>Συγχρονισμός</b>: μπαίνουν όσα λείπουν, όπου άλλαξε κάτι και στις δύο συσκευές κρατιέται η πιο πρόσφατη αλλαγή, και ό,τι σβήστηκε στη μία σβήνεται και στην άλλη. Εδώ: ${planTxt(plan.n)}.</span></label>
     <label class="check"><input type="radio" name="bkMode" value="replace"> <span><b>Αντικατάσταση όλων</b>: η εφαρμογή γυρνά ακριβώς όπως ήταν στο αντίγραφο. Ό,τι δεν υπάρχει στο αρχείο σβήνεται.</span></label>
     ${sets?`<label class="check"><input type="checkbox" id="bkSettings"${S.settingsSaved?'':' checked'}> Να περάσουν και οι ρυθμίσεις του αρχείου (μεροκάματα, επιδοτήσεις, ελαιουργείο). Αλλιώς μένουν οι τωρινές.</label>`:''}
     <p class="note">${native?'Πριν την εισαγωγή κρατιέται αυτόματα αντίγραφο της τωρινής κατάστασης (Αρχείο → Άνοιγμα φακέλου δεδομένων → backups).':'Αν θέλεις να μπορείς να γυρίσεις πίσω, πάρε πρώτα <button type="button" class="linkbtn" id="bkFirst">αντίγραφο της τωρινής κατάστασης</button>.'}</p>
@@ -1414,13 +1488,15 @@ async function importBackup(file){const box=$('#bkConfirm');let o;
       if(replace){const fk=new Set(fields.map(([id])=>id)),ek=new Set(entries.map(([id])=>id));
         for(const id of S.entries.keys())if(!ek.has(id))ops.push({c:'entries',id,del:true});
         for(const id of S.fields.keys())if(!fk.has(id))ops.push({c:'fields',id,del:true})}
-      for(const [id,d] of fields)ops.push({c:'fields',id,data:d});for(const [id,d] of entries)ops.push({c:'entries',id,data:d});
+      if(replace){for(const [id,d] of fields)ops.push({c:'fields',id,data:d});for(const [id,d] of entries)ops.push({c:'entries',id,data:d})}
+      else ops.push(...plan.ops);
       const fileCrops=sets&&sets.crops&&typeof sets.crops==='object'?sets.crops:{};
       const needCrops=Object.fromEntries(fields.map(([,f])=>f.crop).filter(c=>isCustomCrop(c)&&fileCrops[c]?.name&&!S.settings.crops?.[c]?.name).map(c=>[c,fileCrops[c]]));
       if(sets&&$('#bkSettings')?.checked)ops.push({c:'settings',id:'main',data:{...S.settings,...sets,subsidy:{...(S.settings.subsidy||{}),...(sets.subsidy||{})},crops:{...(S.settings.crops||{}),...fileCrops},subsidyBySeason:{...(S.settings.subsidyBySeason||{}),...(sets.subsidyBySeason||{})}}});
       else if(Object.keys(needCrops).length)ops.push({c:'settings',id:'main',data:{...S.settings,crops:{...(S.settings.crops||{}),...needCrops}}});
       await writeMany(ops,(i,n)=>{$('#bkProg').textContent=n?`Εισαγωγή… ${Math.round(i/n*100)}%`:''});
-      farmFrozen=false;box.hidden=true;toast(`Εισήχθησαν ${fields.length} ${fields.length===1?'αγροτεμάχιο':'αγροτεμάχια'} και ${entries.length} ${entries.length===1?'καταχώριση':'καταχωρίσεις'}`+(sets&&!$('#bkSettings')?.checked?'. Οι ρυθμίσεις έμειναν οι τωρινές.':''));render()}
+      if(!replace)noteTombs(plan.tombs.filter(([c,id])=>!S[c].has(id)));
+      farmFrozen=false;box.hidden=true;toast((replace?`Εισήχθησαν ${fields.length} ${fields.length===1?'αγροτεμάχιο':'αγροτεμάχια'} και ${entries.length} ${entries.length===1?'καταχώριση':'καταχωρίσεις'}`:`Συγχρονισμός: ${planTxt(plan.n)}`)+(sets&&!$('#bkSettings')?.checked?'. Οι ρυθμίσεις έμειναν οι τωρινές.':''));render()}
     catch(e){toast('Η εισαγωγή σταμάτησε: '+(e.message||e.code));$('#bkGo').disabled=false}}}
 $('#bkExport').onclick=exportBackup;$('#bkFile').onchange=e=>{const f=e.target.files[0];if(f)importBackup(f);e.target.value=''};
 
@@ -1443,8 +1519,8 @@ function openWipe(all){const phrase=all?'ΔΙΑΓΡΑΦΗ ΟΛΩΝ':'ΔΙΑΓΡ�
         box.hidden=true;box.innerHTML='';$('#logSearch').value='';logOpen.clear();lineEdit=null;logConfirm=null;lastSaved=null;editing=null;$('#logSeason').value='';$('#repSeason').value='closed';resetEntry();go('home');
         toast(`Οι καταχωρίσεις διαγράφηκαν${sets?' μαζί με τις ρυθμίσεις':''}. Τα αγροτεμάχια έμειναν.`);return}
       if(window.katastixoNative?.reset){await window.katastixoNative.reset();location.reload();return}
-      for(const id of [...S.entries.keys()])await db.doc('entries/'+id).delete();
-      if(all){for(const id of [...S.fields.keys()])await db.doc('fields/'+id).delete();await db.doc('settings/main').delete()}
+      for(const id of [...S.entries.keys()])await rawRef('entries/'+id).delete();
+      if(all){for(const id of [...S.fields.keys()])await rawRef('fields/'+id).delete();await db.doc('settings/main').delete();await db.doc('settings/deleted').delete().catch(()=>{});S.deleted={fields:{},entries:{}}}
       box.hidden=true;box.innerHTML='';$('#logSearch').value='';try{localStorage.removeItem('agrologio-guide-off')}catch{}logOpen.clear();lineEdit=null;logConfirm=null;lastSaved=null;editing=null;$('#fieldFormCard').hidden=true;$('#kmlImport').hidden=true;$('#bkConfirm').hidden=true;$('#logField').value='';$('#logSeason').value='';$('#repSeason').value='closed';resetEntry();go('home');toast('Όλα τα δεδομένα διαγράφηκαν. Η εφαρμογή ξεκινάει από την αρχή.')}
     catch(e){toast('Η διαγραφή σταμάτησε: '+(e.message||e.code));goBtn.disabled=false;goBtn.textContent='Οριστική διαγραφή'}}}
 $('#wipeStart').onclick=()=>openWipe(true);$('#wipeEntries').onclick=()=>openWipe(false);
@@ -1453,12 +1529,14 @@ resetEntry();render();
 (async()=>{
   const timer=setTimeout(()=>{if(!db){render()}},10000);
   try{db=await window.claude?.use('db')||null}catch{db=null}
+  if(db){rawRef=db.doc.bind(db);wrapDb(db)}
   dbState='done';
   clearTimeout(timer);
   if(!db){S.loaded={f:true,e:true,s:true};render();return}
   const fail=e=>{$('#status').textContent='Σφάλμα φόρτωσης: '+(e?.message||e?.code||'')};
   db.collection('fields').onSnapshot(q=>{S.fields=new Map(q.docs.map(d=>[d.id,d.data()]).filter(([,f])=>validField(f)));memo.clear();S.loaded.f=true;if(!bulkBusy)scheduleRender()},fail);
   db.collection('entries').onSnapshot(q=>{S.entries=new Map(q.docs.map(d=>[d.id,d.data()]).filter(([,e])=>!!e&&typeof e==='object'&&isDate(e.date)));memo.clear();S.loaded.e=true;if(!bulkBusy)scheduleRender()},fail);
+  db.doc('settings/deleted').onSnapshot(d=>{const x=d.exists?d.data():{};S.deleted={fields:{...(x.fields||{})},entries:{...(x.entries||{})}}},()=>{});
   db.doc('settings/main').onSnapshot(d=>{S.settings={...DEFAULT_SETTINGS,...(d.exists?d.data():{})};S.settingsSaved=!!d.exists;memo.clear();S.loaded.s=true;if(!bulkBusy)scheduleRender()},fail);
 })();
 </script>
