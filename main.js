@@ -13,6 +13,8 @@ const logFile = () => path.join(app.getPath('userData'), 'agrologio.log');
 const log = (...a) => { try { fs.appendFileSync(logFile(), new Date().toISOString() + ' ' + a.map(String).join(' ') + '\n'); } catch {} };
 
 const COLLECTIONS = ['fields', 'entries', 'settings'];
+// --smoke-test (used by the release workflow with an empty --user-data-dir): start, load the page, exit 0. No dialogs, no updates.
+const SMOKE = app.commandLine.hasSwitch('smoke-test');
 let SQL, db, dbPath;
 
 // Write the whole database to disk safely: temp file, flush to disk, then replace.
@@ -20,7 +22,11 @@ function persist() {
   const tmp = dbPath + '.tmp';
   const fd = fs.openSync(tmp, 'w');
   try { fs.writeSync(fd, Buffer.from(db.export())); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
-  fs.renameSync(tmp, dbPath);
+  // Antivirus or OneDrive can hold the file for a moment: try again a few times before giving up.
+  for (let i = 0; ; i++) {
+    try { fs.renameSync(tmp, dbPath); return; }
+    catch (e) { if (i >= 5 || !['EPERM', 'EBUSY', 'EACCES'].includes(e.code)) throw e; Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100 * (i + 1)); }
+  }
 }
 
 const backupDir = () => { const d = path.join(app.getPath('userData'), 'backups'); fs.mkdirSync(d, { recursive: true }); return d; };
@@ -45,26 +51,35 @@ function tryOpen(file) {
   } catch { return null; }
 }
 
-// The data file is damaged or empty: keep it aside and offer the newest good backup.
+// The data file is damaged or empty: offer the newest good copy. The damaged file is moved aside only after the user chooses,
+// so «Έξοδος» leaves everything exactly as it was and the next start asks again (it never opens an empty database on its own).
 async function recoverDb() {
-  let broken = dbPath.replace(/\.sqlite$/, `-χαλασμένο-${stamp()}.sqlite`);
-  for (let i = 2; fs.existsSync(broken); i++) broken = dbPath.replace(/\.sqlite$/, `-χαλασμένο-${stamp()}-${i}.sqlite`);
-  try { fs.renameSync(dbPath, broken); } catch {}
+  const keepBroken = () => {
+    let broken = dbPath.replace(/\.sqlite$/, `-χαλασμένο-${stamp()}.sqlite`);
+    for (let i = 2; fs.existsSync(broken); i++) broken = dbPath.replace(/\.sqlite$/, `-χαλασμένο-${stamp()}-${i}.sqlite`);
+    try { fs.renameSync(dbPath, broken); log('damaged db kept as', broken); } catch (e) { log('could not move damaged db', e.code || e.message); }
+    return broken;
+  };
   const dir = backupDir();
-  const cands = fs.readdirSync(dir).filter(f => f.endsWith('.sqlite')).map(f => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs })).sort((a, b) => b.t - a.t);
+  // A finished write that was not yet renamed (power cut between the two steps) is the newest copy there is.
+  const cands = [];
+  try { const t = dbPath + '.tmp'; if (fs.existsSync(t)) cands.push({ file: t, t: fs.statSync(t).mtimeMs, tmp: true }); } catch {}
+  cands.push(...fs.readdirSync(dir).filter(f => f.endsWith('.sqlite')).map(f => ({ file: path.join(dir, f), t: fs.statSync(path.join(dir, f)).mtimeMs })).sort((a, b) => b.t - a.t));
   for (const c of cands) {
-    const d = tryOpen(path.join(dir, c.f)); if (!d) continue;
+    const d = tryOpen(c.file); if (!d) continue;
     const when = new Date(c.t).toLocaleString('el-GR');
     const r = await dialog.showMessageBox({ type: 'warning', title: 'Αγρολόγιο', buttons: ['Επαναφορά', 'Έξοδος'], defaultId: 0, cancelId: 1,
       message: 'Το αρχείο των στοιχείων σου είναι κατεστραμμένο.',
-      detail: `Βρέθηκε αντίγραφο ασφαλείας της ${when}. Με «Επαναφορά» το πρόγραμμα ανοίγει με αυτό.\n\nΤο χαλασμένο αρχείο φυλάχτηκε ως:\n${broken}` });
+      detail: `Βρέθηκε ${c.tmp ? 'πρόσφατη αποθήκευση' : 'αντίγραφο ασφαλείας'} της ${when}. Με «Επαναφορά» το πρόγραμμα ανοίγει με αυτό και το χαλασμένο αρχείο φυλάγεται δίπλα.\n\nΜε «Έξοδος» δεν αλλάζει τίποτα.` });
     if (r.response !== 0) { d.close(); app.exit(0); return null; }
+    keepBroken();
     return d;
   }
   const r = await dialog.showMessageBox({ type: 'warning', title: 'Αγρολόγιο', buttons: ['Ξεκίνα με κενό αρχείο', 'Έξοδος'], defaultId: 1, cancelId: 1,
     message: 'Το αρχείο των στοιχείων σου είναι κατεστραμμένο και δεν βρέθηκε αντίγραφο ασφαλείας.',
-    detail: `Αν έχεις αντίγραφο (.json), ξεκίνα με κενό αρχείο και φέρ' το από Ρυθμίσεις → Αντίγραφο ασφαλείας.\n\nΤο χαλασμένο αρχείο φυλάχτηκε ως:\n${broken}` });
+    detail: 'Αν έχεις αντίγραφο (.json), ξεκίνα με κενό αρχείο και φέρ\' το από Ρυθμίσεις → Αντίγραφο ασφαλείας. Το χαλασμένο αρχείο θα φυλαχτεί δίπλα.\n\nΜε «Έξοδος» δεν αλλάζει τίποτα.' });
   if (r.response !== 0) { app.exit(0); return null; }
+  keepBroken();
   return new SQL.Database();
 }
 
@@ -77,7 +92,9 @@ async function openDb() {
   backupOnNewVersion();
   seedOnce();
   persist();
-  try { backupFile('ημερήσιο', stamp().slice(0, 10), 7); } catch {}
+  // An empty database is never copied over a daily backup (it would push a good copy out).
+  const hasData = db.exec('SELECT (SELECT count(*) FROM fields) + (SELECT count(*) FROM entries)')[0].values[0][0] > 0;
+  if (hasData) try { backupFile('ημερήσιο', stamp().slice(0, 10), 7); } catch {}
   return true;
 }
 
@@ -226,6 +243,20 @@ function createWindow() {
       : p.selectionText ? [{ label: 'Αντιγραφή', role: 'copy' }] : [];
     if (items.length) Menu.buildFromTemplate(items).popup({ window: win });
   });
+  if (SMOKE) {
+    // Release check: the page must load and show its title, then the program closes with code 0.
+    const fail = (why) => { console.error('smoke test failed:', why); app.exit(2); };
+    setTimeout(() => fail('timeout'), 60000);
+    win.webContents.on('did-fail-load', (_e, code, desc) => fail(desc || code));
+    win.webContents.on('render-process-gone', (_e, d) => fail('renderer ' + d.reason));
+    win.webContents.on('did-finish-load', async () => {
+      try {
+        const ok = await win.webContents.executeJavaScript("new Promise(r=>setTimeout(()=>r(!!document.querySelector('nav')&&document.title.includes('Αγρολόγιο')),3000))");
+        if (!ok) return fail('page did not render');
+        console.log('smoke test ok', app.getVersion()); app.exit(0);
+      } catch (e) { fail(e.message); }
+    });
+  }
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
 }
 
@@ -285,7 +316,16 @@ Menu.setApplicationMenu(Menu.buildFromTemplate([
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { const w = BrowserWindow.getAllWindows()[0]; if (w) { if (w.isMinimized()) w.restore(); w.focus(); } });
-  app.whenReady().then(openDb).then(ok => { if (ok) { lockDownSession(); createWindow(); setupUpdates(); } }).catch(err => {
+  app.whenReady().then(openDb).then(ok => { if (ok) { lockDownSession(); createWindow(); if (!SMOKE) setupUpdates(); } }).catch(async err => {
+    log('start failed', err && err.stack || err);
+    if (SMOKE) { console.error('smoke test failed:', err && err.stack || err); return app.exit(3); }
+    // A version that cannot start must still be able to replace itself with a newer one.
+    if (app.isPackaged) {
+      try {
+        const r = await autoUpdater.checkForUpdates();
+        if (r && r.isUpdateAvailable && r.downloadPromise) { await r.downloadPromise; return autoUpdater.quitAndInstall(true, true); }
+      } catch (e) { log('update after failed start', e && e.message || e); }
+    }
     dialog.showErrorBox('Το Αγρολόγιο δεν μπόρεσε να ξεκινήσει', 'Δοκίμασε να το ανοίξεις ξανά. Αν συνεχίζει, στείλε αυτό το μήνυμα:\n\n' + String(err && err.message || err).slice(0, 300));
     app.quit();
   });

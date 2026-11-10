@@ -1,28 +1,38 @@
 # Χτίζει το πρόγραμμα για Windows και ανεβάζει την έκδοση του package.json στα Releases
 # (installer, blockmap και latest.yml, από όπου τη βρίσκουν τα εγκατεστημένα προγράμματα).
+# Δύο βήματα: το χτίσιμο τρέχει χωρίς δικαίωμα εγγραφής (κανένα πακέτο npm δεν βλέπει κλειδί που ανεβάζει εκδόσεις)
+# και μόνο αν το πρόγραμμα ανοίξει κανονικά στη δοκιμή, το δεύτερο βήμα το ανεβάζει.
 name: release
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 # Ένα τρέξιμο τη φορά, ώστε δύο κλικ να μη φτιάξουν μισή έκδοση.
 concurrency:
   group: release
   cancel-in-progress: false
 jobs:
-  windows:
+  build:
     runs-on: windows-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Έλεγχος ότι η έκδοση είναι νέα
+        id: ver
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           V=$(node -p "require('./package.json').version")
-          if gh release view "v$V" --json isDraft -q .isDraft 2>/dev/null | grep -q false; then
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>/dev/null | grep -q false; then
             echo "::error::Η έκδοση $V έχει ήδη βγει. Άλλαξε τον αριθμό έκδοσης στο package.json πριν ξανατρέξεις."
             exit 1
           fi
@@ -33,13 +43,42 @@ jobs:
       - run: npm ci
       - run: node build-app.js
       - run: npx electron-builder --win nsis --x64 --publish never
+      - name: Δοκιμή ότι το πρόγραμμα ανοίγει
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'smoke-data'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $p = Start-Process -FilePath 'dist\win-unpacked\Agrologio.exe' -ArgumentList '--smoke-test', "--user-data-dir=$dir" -PassThru -Wait
+          if ($p.ExitCode -ne 0) { Write-Error "Το πρόγραμμα δεν άνοιξε σωστά (κωδικός $($p.ExitCode)). Η έκδοση δεν ανεβαίνει."; exit 1 }
+          if (-not (Test-Path (Join-Path $dir 'katastixo.sqlite'))) { Write-Error 'Δεν δημιουργήθηκε η βάση δεδομένων.'; exit 1 }
+          Write-Host 'Το πρόγραμμα άνοιξε κανονικά.'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: installer
+          path: |
+            dist/Agrologio-Setup-${{ steps.ver.outputs.version }}.exe
+            dist/Agrologio-Setup-${{ steps.ver.outputs.version }}.exe.blockmap
+            dist/latest.yml
+          if-no-files-found: error
+          retention-days: 7
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: installer
+          path: dist
       - name: Ανέβασμα στα Releases
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ needs.build.outputs.version }}
         run: |
-          V=$(node -p "require('./package.json').version")
+          R="$GITHUB_REPOSITORY"
           # Πρώτα ως πρόχειρο: τα εγκατεστημένα προγράμματα τη βλέπουν μόνο όταν ανέβουν όλα τα αρχεία.
-          gh release view "v$V" >/dev/null 2>&1 || gh release create "v$V" --draft --target "$GITHUB_SHA" --title "Αγρολόγιο $V" --notes "Δείτε τις αλλαγές στο README."
-          gh release upload "v$V" "dist/Agrologio-Setup-$V.exe" "dist/Agrologio-Setup-$V.exe.blockmap" dist/latest.yml --clobber
-          gh release edit "v$V" --draft=false --latest
+          gh release view "v$V" --repo "$R" >/dev/null 2>&1 || gh release create "v$V" --repo "$R" --draft --target "$GITHUB_SHA" --title "Αγρολόγιο $V" --notes "Δείτε τις αλλαγές στο README."
+          gh release upload "v$V" --repo "$R" "dist/Agrologio-Setup-$V.exe" "dist/Agrologio-Setup-$V.exe.blockmap" dist/latest.yml --clobber
+          gh release edit "v$V" --repo "$R" --draft=false --latest
