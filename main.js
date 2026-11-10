@@ -95,6 +95,9 @@ async function openDb() {
   // An empty database is never copied over a daily backup (it would push a good copy out).
   const hasData = db.exec('SELECT (SELECT count(*) FROM fields) + (SELECT count(*) FROM entries)')[0].values[0][0] > 0;
   if (hasData) try { backupFile('ημερήσιο', stamp().slice(0, 10), 7); } catch {}
+  // The program may stay open for days: refresh the day's copy every 3 hours and on exit too.
+  const daily = () => { try { const n = db.exec('SELECT (SELECT count(*) FROM fields) + (SELECT count(*) FROM entries)')[0].values[0][0]; if (n > 0) backupFile('ημερήσιο', stamp().slice(0, 10), 7); } catch (e) { log('daily backup', e.code || e.message); } };
+  if (!SMOKE) { setInterval(daily, 3 * 60 * 60 * 1000).unref?.(); app.on('before-quit', daily); }
   return true;
 }
 
