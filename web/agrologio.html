@@ -90,6 +90,12 @@ svg.cmp{width:100%;height:auto;display:block;margin:6px 0}svg.cmp .cbase{stroke:
 .check:has(input[type=radio]){align-items:flex-start}.check input[type=radio]{margin-top:3px}
 .linkbtn{all:unset;color:var(--accent,inherit);text-decoration:underline;cursor:pointer}.linkbtn:focus-visible{outline:2px solid currentColor}
 .check input{width:auto}
+.photos{display:flex;flex-wrap:wrap;gap:8px}.photos:empty{display:none}.photo{position:relative;width:84px;height:84px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--bg2,#eee)}
+.photo img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}.photo button{position:absolute;top:3px;right:3px;min-height:0;padding:0 7px;line-height:22px;border-radius:999px;font-size:13px}
+.vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.photoview{max-width:min(96vw,1000px);padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink)}.photoview::backdrop{background:rgba(0,0,0,.6)}.photoview img{max-width:100%;max-height:78vh;display:block;margin:0 auto 8px}
+.rem{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}.rem:first-of-type{border-top:0}.rem .when{min-width:86px;font-variant-numeric:tabular-nums}.rem .late{color:var(--bad);font-weight:600}.rem .txt{flex:1}
+.bud input{width:7.5em;text-align:right}
 .check input[type=checkbox]{width:20px;height:20px;flex:none;margin:0}.check input[type=radio]{width:18px;height:18px;flex:none}
 .tile-out{border-top:3px solid var(--bad)}.tile-in{border-top:3px solid var(--good)}.tile-out .big{color:var(--bad)}.tile-in .big{color:var(--good)}
 /* Touch screens: every button and field at least 44 px high (WCAG 2.5.8). */
@@ -206,6 +212,7 @@ html{scroll-padding-top:136px}@media (max-width:760px){html{scroll-padding-top:1
   </div>
 
   <section id="tab-home" class="stack"></section>
+  <dialog id="photoView" class="photoview"><img id="photoImg" alt="Φωτογραφία"><div class="row" style="justify-content:space-between"><span class="note" id="photoCap"></span><span class="row"><button type="button" id="photoPrev" aria-label="Προηγούμενη">‹</button><button type="button" id="photoNext" aria-label="Επόμενη">›</button><button type="button" id="photoClose">Κλείσιμο</button></span></div></dialog>
 
   <section id="tab-entry" class="stack entrylayout" hidden>
     <div class="card">
@@ -227,6 +234,16 @@ html{scroll-padding-top:136px}@media (max-width:760px){html{scroll-padding-top:1
           <div class="fields">
             <label class="f">Εργασία<select id="eTask"></select></label>
             <label class="f" id="eTaskOtherWrap" hidden>Περιγραφή εργασίας<input id="eTaskOther" placeholder="π.χ. Μπόλιασμα"></label>
+            <label class="f" id="eInvWrap">Αρ. παραστατικού (προαιρετικό)<input id="eInvoice" placeholder="Τιμολόγιο ή απόδειξη αγοράς"></label>
+          </div>
+          <div id="damagePart" class="stack" style="gap:8px" hidden>
+            <span class="label">Ζημιά για τον ΕΛΓΑ</span>
+            <div class="fields">
+              <label class="f">Αιτία<select id="dCause"><option>Χαλάζι</option><option>Παγετός</option><option>Ανεμοθύελλα</option><option>Πλημμύρα / βροχή</option><option>Ξηρασία / καύσωνας</option><option>Πυρκαγιά</option><option>Ασθένεια / εχθρός</option><option>Άλλο</option></select></label>
+              <label class="f">Ζημιά στην παραγωγή (%)<input id="dPct" type="number" min="0" max="100" step="any" inputmode="decimal"></label>
+              <label class="f">Αρ. δήλωσης ΕΛΓΑ<input id="dDecl" placeholder="Από την αναγγελία ζημιάς"></label>
+            </div>
+            <p class="note">Βάλε και φωτογραφίες της ζημιάς πιο κάτω. Όταν έρθει η αποζημίωση, γράψ' την ως έσοδο «Αποζημίωση ΕΛΓΑ» με τον ίδιο αριθμό δήλωσης και θα φαίνονται μαζί στις Αναφορές.</p>
           </div>
           <p class="note" id="farmNote" hidden>Κοινό έξοδο για όλο το κτήμα. Μοιράζεται αυτόματα στα αγροτεμάχια που υπήρχαν εκείνη την ημερομηνία, ανάλογα με τα στρέμματα (όχι στα χωράφια χωρίς καλλιέργεια), και μπαίνει στη χρονιά που τρέχει σε κάθε αγροτεμάχιο εκείνη την ημερομηνία.</p>
           <div id="multiPart" class="stack" style="gap:8px" hidden>
@@ -279,7 +296,19 @@ html{scroll-padding-top:136px}@media (max-width:760px){html{scroll-padding-top:1
             <label class="f">Αρ. παραστατικού<input id="iInvoice" placeholder="Τιμολόγιο αγοράς ή ΔΠΠ"></label>
             <datalist id="buyerNames"></datalist>
           </div>
+          <div class="fields" id="iSubWrap" hidden>
+            <label class="f">Είδος ενίσχυσης<select id="iSubType"><option value="basic">Βασική ενίσχυση</option><option value="redist">Αναδιανεμητική</option><option value="eco">Οικολογικό σχήμα</option><option value="coupled">Συνδεδεμένη</option><option value="advance">Προκαταβολή</option><option value="final">Εκκαθάριση</option><option value="other">Άλλη</option></select></label>
+          </div>
+          <div class="fields" id="iDeclWrap" hidden>
+            <label class="f">Αρ. δήλωσης ΕΛΓΑ<input id="iDecl" list="declNos" placeholder="Ίδιος με τη δήλωση ζημιάς"></label><datalist id="declNos"></datalist>
+          </div>
           <p class="note" id="iHint" hidden></p>
+        </div>
+        <div class="stack" style="gap:8px" id="photoPart">
+          <div class="row" style="justify-content:space-between"><span class="label">Φωτογραφίες</span><label class="btn" for="ePhotoIn" tabindex="0" role="button">+ Φωτογραφία</label></div>
+          <input id="ePhotoIn" type="file" accept="image/*" multiple class="vh">
+          <div id="ePhotos" class="photos"></div>
+          <p class="note" id="ePhotoNote">Απόδειξη, τιμολόγιο, δελτίο ελαιουργείου ή ζημιά. Μικραίνουν αυτόματα για να μη βαραίνουν.</p>
         </div>
         <label class="f">Σημείωση<textarea id="eNote" placeholder="Προαιρετικά"></textarea></label>
         <div class="row">
@@ -289,6 +318,7 @@ html{scroll-padding-top:136px}@media (max-width:760px){html{scroll-padding-top:1
         </div>
       </form>
     </div>
+    <div id="stockCard" class="card"></div>
     <div id="entrySummary" class="stack"></div>
   </section>
 
@@ -389,7 +419,12 @@ const PDF_FONT_BOLD="AAEAAAAOAIAAAwBgR0RFRgQQBEYAAGX8AAAAKEdQT1NEdkx1AABmJAAAACB
 
 <script>
 // Buttons inside generated HTML say what they do with data-act (no inline handlers, so the desktop page can forbid inline scripts).
-const ACTS={mapZoom:(b,a)=>mapZoom(a),goTab:(b,a)=>go(a),sprayPdf:()=>exportSprayPdf(),sprayXlsx:()=>exportSprayXlsx(),guideOff:()=>{try{localStorage.setItem('agrologio-guide-off','1')}catch{}renderHome()},addField:()=>{go('fields');openFieldForm()},hideCard:b=>{b.closest('.card').hidden=true},newEntry:(b,a)=>newEntry(a||undefined),logFor:(b,a)=>logFor(a),openFieldForm:(b,a)=>openFieldForm(a||undefined),editEntry:(b,a)=>editEntry(a),sellOil:(b,a)=>{newEntry(a||undefined);setKind('income');$('#iKind').value='oil';syncIncome();$('#iQty').focus()}};
+const ACTS={photoView:(b,a)=>openPhotos(a),photoDel:(b,a)=>{ePhotos.splice(+a,1);renderPhotos()},
+  stockNew:()=>{$('#stockForm').hidden=false;$('#stName').focus()},stockCancel:()=>{$('#stockForm').hidden=true},
+  stockDel:async(b,a)=>{if(!confirm('Να διαγραφεί αυτή η αγορά από την αποθήκη;'))return;const e=S.extra.get(a);try{await db.doc('entries/'+a).delete();toast('Η αγορά διαγράφηκε',e?restoreEntry(a,e):null)}catch(err){toast('Δεν διαγράφηκε: '+(err.message||err.code))}},
+  remNew:()=>{$('#remForm').hidden=false;$('#remText').focus()},remCancel:()=>{$('#remForm').hidden=true},
+  remDone:async(b,a)=>{const e=S.extra.get(a);if(!e)return;try{await db.doc('entries/'+a).set({...e,done:true,updatedAt:Date.now()});toast('Σημειώθηκε ότι έγινε',()=>db.doc('entries/'+a).set(e))}catch(err){toast('Δεν αποθηκεύτηκε: '+(err.message||err.code))}},
+  acctXlsx:()=>exportAcct(),mapZoom:(b,a)=>mapZoom(a),goTab:(b,a)=>go(a),sprayPdf:()=>exportSprayPdf(),sprayXlsx:()=>exportSprayXlsx(),guideOff:()=>{try{localStorage.setItem('agrologio-guide-off','1')}catch{}renderHome()},addField:()=>{go('fields');openFieldForm()},hideCard:b=>{b.closest('.card').hidden=true},newEntry:(b,a)=>newEntry(a||undefined),logFor:(b,a)=>logFor(a),openFieldForm:(b,a)=>openFieldForm(a||undefined),editEntry:(b,a)=>editEntry(a),sellOil:(b,a)=>{newEntry(a||undefined);setKind('income');$('#iKind').value='oil';syncIncome();$('#iQty').focus()}};
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-act]');if(b&&ACTS[b.dataset.act])ACTS[b.dataset.act](b,b.dataset.arg)});
 document.addEventListener('keydown',ev=>{if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches?.('svg [data-act]')){ev.preventDefault();ev.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
 // Esc closes the open box (line editor, field form, import or delete boxes).
@@ -424,7 +459,16 @@ const TASKS={
  olive:['Συγκομιδή','Άλεση','Μεταφορά στο ελαιουργείο','Κλάδεμα','Απομάκρυνση / τεμαχισμός κλαδιών','Όργωμα / φρεζάρισμα','Χορτοκοπή / ζιζάνια','Λίπανση εδάφους','Διαφυλλική λίπανση','Ψεκασμός για δάκο','Δακοπαγίδες','Ψεκασμός χαλκού','Άρδευση'],
  vine:['Χειμερινό κλάδεμα','Δέσιμο / υποστύλωση','Βλαστολόγημα','Κορυφολόγημα','Όργωμα / φρεζάρισμα','Χορτοκοπή / ζιζάνια','Λίπανση','Ψεκασμός για περονόσπορο','Θειάφισμα για ωίδιο','Ψεκασμός για βοτρύτη','Άρδευση','Τρύγος','Μεταφορά στο οινοποιείο']};
 document.documentElement.lang='el';
-const COMMON_TASKS=['Επίσκεψη / επιθεώρηση','Ασφάλιση ΕΛΓΑ','Συντήρηση εξοπλισμού'];
+const COMMON_TASKS=['Επίσκεψη / επιθεώρηση','Ασφάλιση ΕΛΓΑ','Ζημιά (για ΕΛΓΑ)','Πληρωμή μισθώματος','Συντήρηση εξοπλισμού'];
+const DAMAGE_TASK='Ζημιά (για ΕΛΓΑ)';
+const DAMAGE_CAUSES=['Χαλάζι','Παγετός','Ανεμοθύελλα','Πλημμύρα / βροχή','Ξηρασία / καύσωνας','Πυρκαγιά','Ασθένεια / εχθρός','Άλλο'];
+// Kinds of CAP payment (ΕΑΕ / myAGRO), so an advance and the final payment are told apart.
+const SUB_TYPES=[['basic','Βασική ενίσχυση'],['redist','Αναδιανεμητική'],['eco','Οικολογικό σχήμα'],['coupled','Συνδεδεμένη'],['advance','Προκαταβολή'],['final','Εκκαθάριση'],['other','Άλλη']];
+const SUB_NAME=Object.fromEntries(SUB_TYPES);
+// Records that are not money of a field and season: purchases for the store and reminders. They live with the entries
+// (so backup and sync carry them) but are kept apart in memory, so no sum ever counts them.
+const EXTRA_KINDS=new Set(['stock','note']);const STOCK='__stock';
+const STOCK_UNITS=['λίτρα','κιλά'];
 const HARVEST=new Set(['Συγκομιδή','Τρύγος','Κλείσιμο χρονιάς']);
 const MILL=new Set(['Άλεση']);
 function getTheme(){try{return localStorage.getItem('agrologio-theme')||'light'}catch{return 'light'}}
@@ -454,6 +498,7 @@ const CATS=[
  {id:'milling',name:'Άλεση / επεξεργασία',unit:'€',color:'#b25f7d'},
  {id:'insurance',name:'Ασφάλιση ΕΛΓΑ',unit:'€',color:'#5f6f8f'},
  {id:'maint',name:'Συντήρηση εξοπλισμού',unit:'€',color:'#8c7a5b'},
+ {id:'rent',name:'Μίσθωμα χωραφιού',unit:'€',color:'#6b5b95'},
  {id:'other',name:'Λοιπά',unit:'€',color:'#8f8f8f'}];
 const CAT=Object.fromEntries(CATS.map(c=>[c.id,c]));
 const INCOME=[
@@ -506,7 +551,7 @@ const fmtDate=d=>d?d.split('-').reverse().join('/'):'';
 const num=v=>{if(typeof v==='number')return isFinite(v)?v:0;let t=String(v??'').trim().replace(/\s/g,'').replace(/^−/,'-');if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');const n=parseFloat(t);return isFinite(n)?n:0};
 
 let db=null,dbState='loading';
-const S={fields:new Map(),entries:new Map(),settings:{...DEFAULT_SETTINGS},deleted:{fields:{},entries:{}},loaded:{f:false,e:false,s:false}};
+const S={fields:new Map(),entries:new Map(),extra:new Map(),settings:{...DEFAULT_SETTINGS},deleted:{fields:{},entries:{}},loaded:{f:false,e:false,s:false}};
 /* ---------- sync between devices ----------
    Every deletion of a field or entry leaves a note (id → time) in settings/deleted, so that a copy brought from the other
    device can tell «deleted here» from «new there». Notes older than two years are dropped. */
@@ -522,20 +567,21 @@ const stampOf=x=>num(x?.updatedAt)||num(x?.createdAt)||0;
 // and what was deleted on one side is deleted on the other (unless it was changed here after that).
 const planTxt=n=>{const w=(k,one,many)=>k===1?one:`${k} ${many}`;return [n.add&&w(n.add,'1 νέα εγγραφή','νέες εγγραφές'),n.upd&&w(n.upd,'1 ενημερώνεται','ενημερώνονται'),n.del&&w(n.del,'1 σβήνεται','σβήνονται'),n.keep&&w(n.keep,'1 μένει όπως είναι εδώ (πιο πρόσφατη)','μένουν όπως είναι εδώ (πιο πρόσφατες)')].filter(Boolean).join(', ')||'όλα είναι ήδη ίδια'};
 function syncPlan(fields,entries,tomb){const ops=[],n={add:0,upd:0,keep:0,del:0,same:0},seen=new Set();
-  const one=(c,id,d)=>{seen.add(c+'/'+id);const loc=S[c].get(id),lt=num(S.deleted[c]?.[id]);
+  const one=(c,id,d)=>{seen.add(c+'/'+id);const loc=c==='entries'?S.entries.get(id)||S.extra.get(id):S[c].get(id),lt=num(S.deleted[c]?.[id]);
     if(!loc){if(lt&&lt>=stampOf(d)){n.keep++;return}ops.push({c,id,data:d});n.add++;return}
     if(JSON.stringify(loc)===JSON.stringify(d)){n.same++;return}
     if(stampOf(loc)>stampOf(d)){n.keep++;return}
     ops.push({c,id,data:d});n.upd++};
   for(const [id,d] of fields)one('fields',id,d);for(const [id,d] of entries)one('entries',id,d);
   const tombs=[];
-  for(const c of ['entries','fields'])for(const [id,t] of Object.entries(tomb?.[c]||{})){if(!num(t))continue;tombs.push([c,id,num(t)]);const loc=S[c].get(id);
+  for(const c of ['entries','fields'])for(const [id,t] of Object.entries(tomb?.[c]||{})){if(!num(t))continue;tombs.push([c,id,num(t)]);const loc=c==='entries'?S.entries.get(id)||S.extra.get(id):S[c].get(id);
     if(loc&&!seen.has(c+'/'+id)&&num(t)>stampOf(loc)){ops.push({c,id,del:true});n.del++}}
   return {ops,n,tombs}}
 function wrapDb(raw){const doc=raw.doc.bind(raw);
   raw.doc=p=>{const r=doc(p);const [c,id]=p.split('/');if(c!=='fields'&&c!=='entries')return r;
     const del=r.delete.bind(r),set=r.set.bind(r);
-    r.delete=async()=>{await del();noteTombs([[c,id]])};
+    // An entry takes its photos with it.
+    r.delete=async()=>{const ph=c==='entries'?(S.entries.get(id)||S.extra.get(id))?.photos:null;await del();noteTombs([[c,id]]);for(const pid of ph||[])doc('photos/'+pid).delete().catch(()=>{})};
     r.set=async d=>{await set(d);if(S.deleted[c]?.[id])noteTombs([],[[c,id]])};return r};
   return raw}
 let tab='home';
@@ -703,7 +749,7 @@ function render(){if(!farmFrozen&&db&&S.loaded.f&&S.loaded.e){farmFrozen=true;fr
   const ready=S.loaded.f&&S.loaded.e&&S.loaded.s;
   $('#status').textContent=dbState==='loading'?'Φόρτωση…':!db?'Χωρίς αποθήκευση':ready?`${plural(S.fields.size,'αγροτεμάχιο','αγροτεμάχια')} · ${plural(S.entries.size,'καταχώριση','καταχωρίσεις')}`:'Φόρτωση…';
   const hasEx=[...S.fields.values(),...S.entries.values()].some(x=>x.example);$('#exampleBanner').hidden=!hasEx;
-  renderFieldSelects();renderEntrySummary();
+  renderFieldSelects();renderEntrySummary();renderStock();
   // Only the tab on screen is drawn now; the others are marked and drawn when opened (with many entries, drawing all of them made every save slow).
   for(const t of Object.keys(TAB_RENDER))tabDirty.add(t);renderTab(tab);
 }
@@ -723,7 +769,7 @@ function guideHtml(fs){let off=false;try{off=localStorage.getItem('agrologio-gui
     ['Κατάγραψε την πρώτη εργασία','Π.χ. ψέκασμα, κλάδεμα ή πετρέλαιο. Από εκεί και πέρα η εφαρμογή βγάζει μόνη της το κέρδος.','<button data-act="newEntry">Νέα καταχώριση</button>']];
   return `<div class="card guide"><div class="row" style="justify-content:space-between"><h2>Πρώτα βήματα</h2><button type="button" class="linkbtn" data-act="guideOff">Απόκρυψη οδηγού</button></div>
     <ol class="steps">${steps.map(([t,d,b],i)=>`<li class="${st[i]?'done':i===next?'now':''}"><span class="stepn" aria-hidden="true">${st[i]?'✓':i+1}</span><div><b>${t}</b>${st[i]?' <span class="note pos">έγινε</span>':''}<p class="note">${d}</p>${!st[i]&&i===next?`<div class="row">${b}</div>`:''}</div></li>`).join('')}</ol></div>`}
-function renderHome(){
+function renderHome(){if(document.activeElement?.closest('#remForm'))return;
   const el=$('#tab-home');
   if(dbState==='loading'){el.innerHTML='<div class="card empty"><p>Φορτώνω τα αγροτεμάχια σου…</p></div>';return}
   if(!db){el.innerHTML=`<div class="card empty"><h2>Η αποθήκευση δεν είναι διαθέσιμη</h2><p>Άνοιξε τη σελίδα από το claude.ai, συνδεδεμένος, για να αποθηκεύονται οι καταχωρίσεις σου.</p></div>`;return}
@@ -736,7 +782,7 @@ function renderHome(){
   const incCur=cur.reduce((a,x)=>a+(x.s?.income||0),0),subEst=cur.reduce((a,x)=>a+(x.s?.subsidyIsEst?x.s.subsidy:0),0);
   const areaBy=cropKeys().filter(c=>c!=='none').map(c=>[c,fs.filter(f=>f.crop===c).reduce((a,f)=>a+num(f.stremmata),0)]).filter(([,a])=>a>0);
   const areaAll=areaBy.reduce((a,[,x])=>a+x,0),areaNone=fs.filter(f=>f.crop==='none').reduce((a,f)=>a+num(f.stremmata),0);
-  el.innerHTML=`${guideHtml(fs)}
+  el.innerHTML=`${guideHtml(fs)}${fs.length?remindersHtml():''}
   <div class="grid home-tiles">
     <div class="card tile-out"><span class="label">Έξοδα τρέχουσας χρονιάς · τι ξόδεψες</span><span class="big">${money(totCur)}</span><span class="note">Όλα τα αγροτεμάχια, από την τελευταία συγκομιδή μέχρι σήμερα</span></div>
     <div class="card tile-in"><span class="label">Έσοδα τρέχουσας χρονιάς · τι έβγαλες</span><span class="big">${money(incCur)}</span><span class="note">Πωλήσεις και λοιπά έσοδα${subEst?` και ${money(subEst)} εκτίμηση επιδότησης`:''}</span></div>
@@ -758,6 +804,7 @@ ${(()=>{const y=new Date().getFullYear(),lim=num(S.settings.dieselLimit?.[y]);if
       </dl>
       <div class="row"><button data-act="newEntry" data-arg="${f.id}">+ Καταχώριση</button><button class="ghost" data-act="logFor" data-arg="${f.id}">Ημερολόγιο</button></div>
     </div>`).join('')}</div>`;
+  bindReminders();
 }
 
 function renderFieldSelects(){
@@ -786,7 +833,7 @@ function logDetail(e){const id=e.id;
       return `<div class="dline editing"><span>${esc(c.name)}</span><span class="dq row" style="gap:6px;flex-wrap:nowrap">${eurL?`<input class="ea" type="number" min="0" step="any" value="${num(l.amount)}" aria-label="Ποσό">`:`<input class="eq" type="number" min="0" step="any" value="${num(l.qty)}" aria-label="${esc(c.unit)}"> × <input class="ep" type="number" min="0" step="any" value="${num(l.price)}" aria-label="Τιμή">`}</span><span></span><span class="acts"><button type="button" class="primary" data-act="lsave" data-id="${id}" data-i="${i}">Αποθήκευση</button><button type="button" data-act="lcancel" data-id="${id}">Ακύρωση</button></span></div>`}
     return `<div class="dline"><span>${esc(c.name)}</span><span class="dq">${l.qty?`${nf.format(num(l.qty))} ${esc(c.unit)} × ${eur2.format(num(l.price))}`:''}</span><span class="num">${eur2.format(num(l.amount))}</span><span class="acts"><button type="button" class="iconbtn" data-act="ledit" data-id="${id}" data-i="${i}" title="Αλλαγή" aria-label="Αλλαγή">${PEN}</button>${binBtn(i,'ldel',i)}</span></div>`}).join('')||'<p class="note">Δεν έχει εγγραφές εξόδων.</p>';
   const extra=[e.kgFruit?`${nf.format(num(e.kgFruit))} κιλά καρπού`:'',e.kgOil?`${nf.format(num(e.kgOil))} κιλά λαδιού`:'',e.millKeptKg?`κράτηση ελαιουργείου ${nf.format(num(e.millKeptKg))} κ.${e.millPct?` (${nf.format(e.millPct)}%)`:''}`:'',MILL.has(e.task)?`υπόλοιπο ${nf.format(num(e.kgOil)-num(e.millKeptKg))} κ.`:'',e.homeKg?`σπίτι ${nf.format(num(e.homeKg))} κ.`:'',MILL.has(e.task)?`σε φύλαξη ${nf.format(num(e.storedKg))} κ.`:'',e.note?esc(e.note):''].filter(Boolean).join(' · ');
-  return `<div class="detail">${rows}${e.kind!=='income'&&(e.lines||[]).length?`<div class="dline dtotal"><span>Σύνολο</span><span></span><span class="num">${eur2.format(entryCost(e))}</span><span></span></div>`:''}${extra?`<p class="note">${extra}</p>`:''}${(e.products||[]).map(p=>`<p class="note">🧪 ${esc(prodTxt(p,S.fields.get(e.fieldId)?.stremmata))}</p>`).join('')}${e.buyer||e.invoice?`<p class="note">${e.buyer?'Αγοραστής: '+esc(e.buyer):''}${e.buyer&&e.invoice?' · ':''}${e.invoice?'Παραστατικό: '+esc(e.invoice):''}</p>`:''}
+  return `<div class="detail">${rows}${e.kind!=='income'&&(e.lines||[]).length?`<div class="dline dtotal"><span>Σύνολο</span><span></span><span class="num">${eur2.format(entryCost(e))}</span><span></span></div>`:''}${extra?`<p class="note">${extra}</p>`:''}${(e.products||[]).map(p=>`<p class="note">🧪 ${esc(prodTxt(p,S.fields.get(e.fieldId)?.stremmata))}</p>`).join('')}${e.buyer||e.invoice?`<p class="note">${e.buyer?'Αγοραστής: '+esc(e.buyer):''}${e.buyer&&e.invoice?' · ':''}${e.invoice?'Παραστατικό: '+esc(e.invoice):''}</p>`:''}${e.damage?`<p class="note">Ζημιά: ${esc(e.damage.cause||'')}${num(e.damage.pct)?' · '+nf.format(num(e.damage.pct))+' %':''}${e.damage.decl?' · δήλωση '+esc(e.damage.decl):''}</p>`:''}${e.subsidyType?`<p class="note">Είδος ενίσχυσης: ${esc(SUB_NAME[e.subsidyType]||'')}</p>`:''}${e.decl?`<p class="note">Δήλωση ΕΛΓΑ: ${esc(e.decl)}</p>`:''}${(e.lines||[]).some(l=>l.fromStock)?'<p class="note">Τα έξοδα φαρμάκων και λιπασμάτων από την αποθήκη υπολογίστηκαν μόνα τους.</p>':''}${e.photos?.length?`<p><button type="button" data-act="photoView" data-arg="entry:${id}">📷 ${plural(e.photos.length,'φωτογραφία','φωτογραφίες')}</button></p>`:''}
     <div class="row dentry"><span class="note">Όλη η καταχώριση</span><button type="button" data-act="edit" data-id="${id}">${PEN} Αλλαγή</button>${e.kind!=='income'&&!HARVEST.has(e.task)&&!MILL.has(e.task)||e.kind==='income'?`<button type="button" data-act="repeat" data-id="${id}" title="Νέα καταχώριση με τα ίδια στοιχεία και σημερινή ημερομηνία">↻ Επανάληψη</button>`:''}${sure('e')?`<button type="button" class="danger sure" data-act="del" data-id="${id}">Σίγουρα; Διαγραφή καταχώρισης</button>`:`<button type="button" class="danger" data-act="del" data-id="${id}">${BIN} Διαγραφή</button>`}</div></div>`}
 async function logAction(ev){const b=ev.target.closest('[data-act]');if(!b)return;const {act,id}=b.dataset;const i=+b.dataset.i;const e=S.entries.get(id);
   try{
@@ -948,10 +995,21 @@ function openFieldForm(id){
       <label class="f">Θέση (γεωγρ. πλάτος, μήκος)<input id="fLatLon" value="${p&&!c.length?p[1].toFixed(6)+', '+p[0].toFixed(6):''}" placeholder="${c.length?'Από το όριο KML':'π.χ. 37,0412 22,1143'}" ${c.length?'disabled':''}></label>
     </div>
     <label class="check"><input type="checkbox" id="fIrr" ${f.irrigated?'checked':''}> Αρδευόμενο</label>
+    <details class="osde"${f.kaek||f.eaeNo||f.tenure==='rent'?' open':''}><summary>Στοιχεία ΟΣΔΕ και ιδιοκτησία</summary>
+      <div class="fields" style="margin-top:8px">
+        <label class="f">ΚΑΕΚ<input id="fKaek" value="${esc(f.kaek||'')}" placeholder="Κτηματολόγιο, αν υπάρχει"></label>
+        <label class="f">Αρ. αγροτεμαχίου ΕΑΕ<input id="fEae" value="${esc(f.eaeNo||'')}" placeholder="Από τη δήλωση στο myAGRO"></label>
+        <label class="f">Ιδιοκτησία<select id="fTenure"><option value="own">Ιδιόκτητο</option><option value="rent"${f.tenure==='rent'?' selected':''}>Μισθωμένο</option></select></label>
+        <label class="f fRentOnly">Μίσθωμα τον χρόνο (€)<input id="fRent" type="number" min="0" step="any" inputmode="decimal" value="${esc(f.rent??'')}"></label>
+        <label class="f fRentOnly">Λήξη μισθωτηρίου<input id="fLeaseEnd" type="date" value="${esc(f.leaseEnd||'')}"></label>
+      </div>
+      <p class="note fRentOnly">Το μίσθωμα γράψ' το όταν το πληρώνεις, με εργασία «Πληρωμή μισθώματος» και έξοδο «Μίσθωμα χωραφιού». Η λήξη του μισθωτηρίου εμφανίζεται στις υπενθυμίσεις τρεις μήνες πριν.</p>
+    </details>
     ${c.length?`<div class="row note">Όριο από KML: ${c.length} σημεία, ≈ ${nf.format(areaStr(c))} στρ. <button type="button" class="ghost danger" id="fDropB">Αφαίρεση ορίου</button></div>`:'<p class="note">Τη θέση τη βρίσκεις με παρατεταμένο πάτημα στο Google Maps. Για όριο αγροτεμαχίου, φέρε αρχείο KML από το Google Earth.</p>'}
     <label class="f">Σημειώσεις<textarea id="fNote">${esc(f.notes)}</textarea></label>
     <div class="row"><button class="primary" type="submit">Αποθήκευση</button><button type="button" id="fCancel">Ακύρωση</button>${id?'<button type="button" class="danger" id="fDel">Διαγραφή</button>':''}</div>
   </form>`;
+  const tenure=()=>card.querySelectorAll('.fRentOnly').forEach(x=>x.hidden=$('#fTenure').value!=='rent');$('#fTenure').onchange=tenure;tenure();
   // Custom crops: the kind decides whether to ask for trees, vines or nothing. A typed name suggests a kind until the user picks one.
   let kindTouched=false;
   const setPl=(focus)=>{const c=$('#fCrop').value,custom=c==='__new'||isCustomCrop(c);$('#fCropNewL').hidden=c!=='__new';if(c==='__new'&&focus)$('#fCropNew').focus();
@@ -982,7 +1040,8 @@ function openFieldForm(id){
       if(same)crop=same[0];else{crop='x-'+Date.now().toString(36);try{await db.doc('settings/main').set({...S.settings,crops:{...(S.settings.crops||{}),[crop]:{name:nm[0].toLocaleUpperCase('el')+nm.slice(1),kind:$('#fKind').value}}})}catch(e){toast('Δεν αποθηκεύτηκε η καλλιέργεια: '+(e.message||e.code));return}}}
     if(isCustomCrop(crop)&&S.settings.crops?.[crop]&&S.settings.crops[crop].kind!==$('#fKind').value){
       try{await db.doc('settings/main').set({...S.settings,crops:{...S.settings.crops,[crop]:{...S.settings.crops[crop],kind:$('#fKind').value}}})}catch(e){toast('Δεν αποθηκεύτηκε η καλλιέργεια: '+(e.message||e.code));return}}
-    const d={name:$('#fName').value.trim(),crop,stremmata:num($('#fStr').value),plants:CROPS[crop]?.noPlants||(isCustomCrop(crop)&&$('#fKind').value==='field')?0:Math.round(num($('#fPlants').value)),variety:$('#fVar').value.trim(),irrigated:$('#fIrr').checked,notes:$('#fNote').value.trim(),boundary:dropB?'':(f.boundary||''),example:!!f.example,updatedAt:Date.now()};
+    const d={name:$('#fName').value.trim(),crop,stremmata:num($('#fStr').value),plants:CROPS[crop]?.noPlants||(isCustomCrop(crop)&&$('#fKind').value==='field')?0:Math.round(num($('#fPlants').value)),variety:$('#fVar').value.trim(),irrigated:$('#fIrr').checked,notes:$('#fNote').value.trim(),
+      kaek:$('#fKaek').value.trim(),eaeNo:$('#fEae').value.trim(),tenure:$('#fTenure').value,rent:$('#fTenure').value==='rent'?num($('#fRent').value):0,leaseEnd:$('#fTenure').value==='rent'?$('#fLeaseEnd').value:'',boundary:dropB?'':(f.boundary||''),example:!!f.example,updatedAt:Date.now()};
     if(!d.boundary&&ll){d.lat=ll[0];d.lon=ll[1]}else{d.lat=null;d.lon=null}
     if(id&&num(f.stremmata)!==d.stremmata){const keep=[...S.entries].filter(([,e])=>e.fieldId===id&&e.harvestDone&&e.fieldStr==null).map(([eid,e])=>({c:'entries',id:eid,data:{...e,fieldStr:num(f.stremmata)}}));
       if(keep.length)try{await writeMany(keep)}catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code));return}}
@@ -1071,7 +1130,7 @@ function renderReports(){
       <td class="r ${signCls(s.net)}"><b>${money(s.net)}</b></td><td class="r ${signCls(s.net)}">${s.perStr!=null?eur.format(s.perStr):'–'}</td>      <td class="r">${f.crop==='olive'?(s.kgOil?nf.format(s.kgOil)+' κ. λάδι':'–'):(s.kgFruit?nf.format(s.kgFruit)+' κ.':'–')}</td></tr>`}).join('')}</tbody>
   </table></div>
   <p class="note">* Εκτίμηση επιδότησης από τις Ρυθμίσεις (στρέμματα × ποσό ανά στρέμμα). Το καθαρό κέρδος μετράει και την οικογενειακή εργασία ως κόστος· χωρίς αυτήν θα ήταν ${money(st.reduce((a,s)=>a+s.net+s.family,0))}.</p>`;
-  el.insertAdjacentHTML('beforeend',sprayCardHtml(st)+vatHtml());
+  el.insertAdjacentHTML('beforeend',sprayCardHtml(st)+vatHtml()+subTypesHtml(st)+elgaHtml()+budgetHtml()+acctHtml());bindBudget(el);
   labelCells(el);
 }
 // Records of the spray / fertiliser book for the years shown in Reports.
@@ -1161,7 +1220,7 @@ function syncEntryForm(resetSeason){
 const allowedCats=()=>$('#eField').value===FARM?CATS:CATS.filter(c=>!c.farmOnly);
 const defaultLine=()=>({cat:$('#eField').value===FARM?'diesel':'labor'});
 function refreshLineCats(){const al=allowedCats();[...$('#eLines').children].forEach(el=>{const sel=el.querySelector('.lc');const v=sel.value;sel.innerHTML=al.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');if(al.some(c=>c.id===v))sel.value=v;else{sel.value=al[0].id;sel.onchange({target:sel})}})}
-function syncTask(){const t=$('#eTask').value;$('#eTaskOtherWrap').hidden=t!=='__other';{const show=$('#eField').value!==FARM&&!MILL.has(t)&&!HARVEST.has(t)&&(isSprayTask(t==='__other'?$('#eTaskOther').value:t)||$('#eProds').children.length>0);$('#sprayPart').hidden=!show;if(show&&!$('#eProds').children.length&&!editing)addProd()}$('#harvestPart').hidden=!HARVEST.has(t);$('#eKgWrap').hidden=t==='Κλείσιμο χρονιάς';
+function syncTask(){const t=$('#eTask').value;$('#eTaskOtherWrap').hidden=t!=='__other';$('#damagePart').hidden=t!==DAMAGE_TASK;{const show=$('#eField').value!==FARM&&!MILL.has(t)&&!HARVEST.has(t)&&(isSprayTask(t==='__other'?$('#eTaskOther').value:t)||$('#eProds').children.length>0);$('#sprayPart').hidden=!show;if(show&&!$('#eProds').children.length&&!editing)addProd()}$('#harvestPart').hidden=!HARVEST.has(t);$('#eKgWrap').hidden=t==='Κλείσιμο χρονιάς';
   const m=MILL.has(t)&&$('#eField').value!==FARM;const was=!$('#millPart').hidden;$('#millPart').hidden=!m;$('#eCostBlock').hidden=m;
   {const fid=$('#eField').value;if(!editing&&!seasonTouched&&S.fields.has(fid)){const w=autoSeason(fid);if(![...$('#eSeason').options].some(o=>+o.value===w))$('#eSeason').innerHTML=seasonOptions(fid,w);$('#eSeason').value=w;incomeHint()}}
   if(m)syncMill();syncMulti()}
@@ -1185,7 +1244,7 @@ function syncMill(){const pct=millPct(),oil=num($('#mKgOil').value),fruit=num($(
   const rest=r1(oil-num(k.value)),home=num($('#mHome').value),stored=r1(rest-home);
   $('#mRest').value=oil?nf.format(rest):'';$('#mStored').value=oil?nf.format(stored):'';
   $('#mSummary').innerHTML=[fruit&&oil?`Απόδοση ${nf.format(oil/fruit*100)}%.`:'',stored<0?'<span class="neg">Το σπίτι και η κράτηση είναι περισσότερα από το λάδι που βγήκε</span>':''].filter(Boolean).join(' · ')}
-function syncIncome(){const k=INC[$('#iKind').value];const kg=k?.unit==='κιλά';$('#iQtyWrap').hidden=!kg;$('#iPriceWrap').hidden=!kg;$('#iSaleWrap').hidden=!SALE_KINDS.has(k?.id);incomeHint()}
+function syncIncome(){const k=INC[$('#iKind').value];const kg=k?.unit==='κιλά';$('#iQtyWrap').hidden=!kg;$('#iPriceWrap').hidden=!kg;$('#iSaleWrap').hidden=!SALE_KINDS.has(k?.id);$('#iSubWrap').hidden=k?.id!=='subsidy';$('#iDeclWrap').hidden=k?.id!=='elga';incomeHint()}
 function prodRow(p={}){const d=document.createElement('div');d.className='prod';
   const type=p.type||(/Λίπανσ|Λίπασμ/.test($('#eTask').value)?'fert':'chem');
   d.innerHTML=`<div class="fields">
@@ -1196,16 +1255,143 @@ function prodRow(p={}){const d=document.createElement('div');d.className='prod';
     <label class="f">Για (εχθρός ή σκοπός)<input class="pTarget" value="${esc(p.target||'')}" placeholder="π.χ. δάκος, κυκλοκόνιο"></label>
     <label class="f pChemOnly">Ημέρες πριν τη συγκομιδή<input class="pPhi" type="number" min="0" step="1" inputmode="numeric" value="${esc(p.phi??'')}"></label>
     <label class="f pChemOnly">Αρ. άδειας κυκλοφορίας<input class="pLic" value="${esc(p.licence||'')}"></label>
-  </div><div class="row" style="justify-content:space-between"><span class="note pTot"></span><button type="button" class="ghost danger pDel">Αφαίρεση</button></div>`;
+    <label class="f">Επανάληψη σε (ημέρες)<input class="pRep" type="number" min="0" step="1" inputmode="numeric" value="${esc(p.repeat??'')}" placeholder="Για υπενθύμιση"></label>
+  </div><p class="note pStock" hidden></p><div class="row" style="justify-content:space-between"><span class="note pTot"></span><button type="button" class="ghost danger pDel">Αφαίρεση</button></div>`;
   const sync=()=>{const chem=d.querySelector('.pType').value==='chem';d.querySelectorAll('.pChemOnly').forEach(x=>x.hidden=!chem);
     const f=S.fields.get($('#eField').value);const dose=num(d.querySelector('.pDose').value),u=d.querySelector('.pUnit').value;
-    d.querySelector('.pTot').textContent=dose&&f&&num(f.stremmata)?`Σύνολο για ${nf.format(num(f.stremmata))} στρ.: ${nf.format(r1(dose*num(f.stremmata)))} ${u}`:''};
+    d.querySelector('.pTot').textContent=dose&&f&&num(f.stremmata)?`Σύνολο για ${nf.format(num(f.stremmata))} στρ.: ${nf.format(r1(dose*num(f.stremmata)))} ${u}`:'';
+    // From the store: what is left and what this use will cost (it is added to the costs by itself).
+    const st=stockOf(d.querySelector('.pName').value),sn=d.querySelector('.pStock');sn.hidden=!st;
+    if(st){const use=f?stockUse({dose,unit:u},num(f.stremmata),st.unit):null;sn.textContent=`Από την αποθήκη: μένουν ${nf.format(r1(st.left))} ${st.unit}, μέση τιμή ${eur2.format(st.avg)} / ${st.unit==='λίτρα'?'λίτρο':'κιλό'}.`+(use!=null&&use>0?` Αυτή η εφαρμογή: ${nf.format(r1(use))} ${st.unit}, κόστος ${eur2.format(use*st.avg)} (μπαίνει μόνο του στα έξοδα).`:use===null&&dose?' Η μονάδα της δόσης δεν ταιριάζει με την αποθήκη, οπότε δεν αφαιρείται.':'')}};
   d.addEventListener('input',sync);d.addEventListener('change',sync);d.querySelector('.pDel').onclick=()=>{d.remove();syncTask()};sync();return d}
 function addProd(p){$('#eProds').append(prodRow(p))}
+
+/* ---------- photos ---------- */
+let ePhotos=[];
+const newPid=()=>'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+// Made small (long side up to 1600 px, JPEG) so one photo stays well under 230 KB.
+async function shrinkPhoto(file){const img=await createImageBitmap(file).catch(()=>null);if(!img)throw new Error('Δεν διαβάζεται ως εικόνα');
+  let max=1600,q=0.78;for(let i=0;i<7;i++){const k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*k));c.height=Math.max(1,Math.round(img.height*k));
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);const url=c.toDataURL('image/jpeg',q);if(url.length<230000)return url;max=Math.round(max*0.8);q=Math.max(0.5,q-0.07)}throw new Error('Η φωτογραφία είναι πολύ μεγάλη')}
+function photosLoad(ids){ePhotos=(ids||[]).map(id=>({id}));renderPhotos();for(const ph of ePhotos)db?.doc('photos/'+ph.id).get().then(d=>{if(d.exists){ph.data=d.data().data;renderPhotos()}else{ph.missing=true;renderPhotos()}}).catch(()=>{})}
+function renderPhotos(){const box=$('#ePhotos');if(!box)return;box.innerHTML=ePhotos.map((p,i)=>`<div class="photo">${p.data?`<img src="${esc(p.data)}" alt="Φωτογραφία ${i+1}" data-act="photoView" data-arg="form:${i}">`:`<span class="note" style="padding:6px;display:block">${p.missing?'Λείπει':'…'}</span>`}<button type="button" class="danger" data-act="photoDel" data-arg="${i}" aria-label="Αφαίρεση φωτογραφίας">×</button></div>`).join('')}
+$('#ePhotoIn').onchange=async ev=>{const files=[...ev.target.files];ev.target.value='';for(const f of files){try{ePhotos.push({id:newPid(),data:await shrinkPhoto(f),name:f.name,isNew:true});renderPhotos()}catch(e){toast(e.message)}}};
+$('#ePhotoIn').previousElementSibling?.querySelector('label.btn')?.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();$('#ePhotoIn').click()}});
+let pv={list:[],i:0};
+function showPhoto(){const p=pv.list[pv.i];if(!p)return;$('#photoImg').src=p.data;$('#photoCap').textContent=pv.list.length>1?`${pv.i+1} από ${pv.list.length}`:'';$('#photoPrev').hidden=$('#photoNext').hidden=pv.list.length<2}
+async function openPhotos(arg){const [src,x]=String(arg).split(':');
+  if(src==='form'){pv={list:ePhotos.filter(p=>p.data),i:Math.max(0,ePhotos.filter(p=>p.data).indexOf(ePhotos[+x]))}}
+  else{const e=S.entries.get(x)||S.extra.get(x);const list=[];for(const id of e?.photos||[]){try{const d=await db.doc('photos/'+id).get();if(d.exists)list.push({data:d.data().data})}catch{}}if(!list.length){toast('Δεν βρέθηκαν οι φωτογραφίες');return}pv={list,i:0}}
+  showPhoto();const dlg=$('#photoView');if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','')}
+$('#photoClose').onclick=()=>$('#photoView').close?.();$('#photoPrev').onclick=()=>{pv.i=(pv.i-1+pv.list.length)%pv.list.length;showPhoto()};$('#photoNext').onclick=()=>{pv.i=(pv.i+1)%pv.list.length;showPhoto()};
+$('#photoView').addEventListener('click',ev=>{if(ev.target===$('#photoView'))$('#photoView').close?.()});
+
+/* ---------- store of inputs (fertilisers, sprays) ---------- */
+// Dose units turned into the store's unit: ml → λίτρα, γρ. → κιλά. null when they do not match (e.g. ml against κιλά).
+const toStockUnit=(qty,unit,stUnit)=>{const u={ml:['λίτρα',0.001],'λίτρα':['λίτρα',1],'γρ.':['κιλά',0.001],'κιλά':['κιλά',1]}[unit];return u&&u[0]===stUnit?qty*u[1]:null};
+const stockUse=(p,str,stUnit)=>toStockUnit(num(p.dose)*num(str),p.unit||'ml',stUnit);
+function stockList(){let r=memo.get('stock');if(r)return r;const by=new Map();
+  for(const [id,e] of S.extra){if(e.kind!=='stock'||!e.name)continue;const k=normWord(e.name);const o=by.get(k)||{name:e.name,type:e.type||'chem',unit:e.unit||'λίτρα',bought:0,cost:0,used:0,buys:[]};
+    if((e.unit||'λίτρα')===o.unit){o.bought+=num(e.qty);o.cost+=num(e.amount)}o.buys.push({id,...e});by.set(k,o)}
+  for(const e of S.entries.values())for(const p of e.products||[]){const o=by.get(normWord(p.name||''));if(!o)continue;const u=stockUse(p,num(S.fields.get(e.fieldId)?.stremmata),o.unit);if(u>0)o.used+=u}
+  r=[...by.values()].map(o=>({...o,avg:o.bought?o.cost/o.bought:0,left:o.bought-o.used,buys:o.buys.sort((a,b)=>b.date.localeCompare(a.date))})).sort((a,b)=>a.name.localeCompare(b.name,'el'));memo.set('stock',r);return r}
+const stockOf=name=>name?stockList().find(o=>normWord(o.name)===normWord(name)):null;
+function renderStock(){const el=$('#stockCard');if(!el)return;if(document.activeElement?.closest('#stockForm'))return;if(!db||!S.fields.size){el.hidden=true;return}el.hidden=false;const list=stockList();
+  el.innerHTML=`<div class="row" style="justify-content:space-between"><h2>Αποθήκη λιπασμάτων και φαρμάκων</h2><button type="button" data-act="stockNew">+ Αγορά</button></div>
+  <p class="note">Γράψε εδώ ό,τι αγοράζεις για την αποθήκη. Όταν το βάζεις σε ψεκασμό ή λίπανση με το ίδιο όνομα, αφαιρείται μόνο του από το απόθεμα και το κόστος του μπαίνει στα έξοδα του αγροτεμαχίου με τη μέση τιμή αγοράς. Η αγορά δεν μετράει ως έξοδο μέχρι να χρησιμοποιηθεί.</p>
+  <form id="stockForm" class="stack" style="gap:8px" hidden>
+    <div class="fields">
+      <label class="f">Προϊόν<input id="stName" list="prodNames" required placeholder="π.χ. Κοκκινέλι"></label>
+      <label class="f">Είδος<select id="stType"><option value="chem">Φυτοφάρμακο</option><option value="fert">Λίπασμα</option></select></label>
+      <label class="f">Ποσότητα<span class="unit"><input id="stQty" type="number" min="0" step="any" inputmode="decimal" required><select id="stUnit" aria-label="Μονάδα">${STOCK_UNITS.map(u=>`<option>${u}</option>`).join('')}</select></span></label>
+      <label class="f">Συνολικό ποσό (€)<input id="stAmt" type="number" min="0" step="any" inputmode="decimal" required></label>
+      <label class="f">Ημερομηνία<input id="stDate" type="date" required value="${today()}"></label>
+      <label class="f">Κατάστημα<input id="stShop" placeholder="Προαιρετικά"></label>
+      <label class="f">Αρ. παραστατικού<input id="stInv" placeholder="Προαιρετικά"></label>
+    </div>
+    <div class="row"><button class="primary" type="submit">Αποθήκευση αγοράς</button><button type="button" data-act="stockCancel">Ακύρωση</button></div>
+  </form>
+  ${list.length?`<div class="tablewrap"><table class="rep"><thead><tr><th>Προϊόν</th><th class="r">Αγοράστηκαν</th><th class="r">Χρησιμοποιήθηκαν</th><th class="r">Μένουν</th><th class="r">Μέση τιμή</th></tr></thead>
+  <tbody>${list.map(o=>`<tr><td><b>${esc(o.name)}</b> <span class="note">${o.type==='fert'?'λίπασμα':'φάρμακο'}</span><details><summary class="note">${plural(o.buys.length,'αγορά','αγορές')}</summary>${o.buys.map(b=>`<div class="row note" style="gap:8px">${fmtDate(b.date)} · ${nf.format(num(b.qty))} ${esc(b.unit||'')} · ${eur2.format(num(b.amount))}${b.supplier?' · '+esc(b.supplier):''}${b.invoice?' · '+esc(b.invoice):''}<button type="button" class="ghost danger" data-act="stockDel" data-arg="${b.id}">Διαγραφή</button></div>`).join('')}</details></td>
+    <td class="r">${nf.format(r1(o.bought))} ${o.unit}</td><td class="r">${nf.format(r1(o.used))} ${o.unit}</td><td class="r ${o.left<0?'neg':''}"><b>${nf.format(r1(o.left))}</b> ${o.unit}</td><td class="r">${eur2.format(o.avg)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="note">Η αποθήκη είναι άδεια.</p>'}`;
+  labelCells(el);
+  $('#stockForm').onsubmit=async ev=>{ev.preventDefault();const name=$('#stName').value.trim(),qty=num($('#stQty').value),amount=num($('#stAmt').value),date=$('#stDate').value;
+    if(!name||!(qty>0)||!isDate(date)){toast('Γράψε προϊόν, ποσότητα και ημερομηνία');return}document.activeElement?.blur();if(amount<0){toast('Οι αριθμοί δεν μπορεί να είναι αρνητικοί');return}
+    const old=stockOf(name);if(old&&old.unit!==$('#stUnit').value){toast(`Το «${old.name}» μετριέται σε ${old.unit}. Γράψε την ποσότητα σε ${old.unit}.`);return}
+    try{await db.collection('entries').add({kind:'stock',fieldId:STOCK,date,name:old?.name||name,type:$('#stType').value,qty,unit:$('#stUnit').value,amount,supplier:$('#stShop').value.trim(),invoice:$('#stInv').value.trim(),createdAt:Date.now(),updatedAt:Date.now()});toast('Η αγορά αποθηκεύτηκε')}
+    catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code))}}}
+
+/* ---------- reminders ---------- */
+const addDays=(d,n)=>{const t=new Date(d+'T12:00:00');t.setDate(t.getDate()+n);return localIso(t)};
+function reminders(){const out=[],td=today(),soon=addDays(td,30);
+  for(const [id,e] of S.extra)if(e.kind==='note'&&!e.done)out.push({id,date:e.date,txt:esc(e.text)+(S.fields.get(e.fieldId)?` · ${esc(S.fields.get(e.fieldId).name)}`:''),own:true});
+  // A spray with «repeat in N days», unless the same product was used again on that field since.
+  for(const e of S.entries.values())for(const p of e.products||[]){if(!num(p.repeat)||!p.name)continue;const due=addDays(e.date,num(p.repeat));if(due<addDays(td,-30))continue;
+    const again=[...S.entries.values()].some(x=>x.fieldId===e.fieldId&&x.date>e.date&&(x.products||[]).some(q=>normWord(q.name||'')===normWord(p.name)));if(again)continue;
+    const f=S.fields.get(e.fieldId);if(f)out.push({date:due,txt:`Επανάληψη «${esc(p.name)}»${p.target?' για '+esc(p.target):''} · ${esc(f.name)}`})}
+  for(const f of S.fields.values())if(f.tenure==='rent'&&isDate(f.leaseEnd)&&f.leaseEnd<=addDays(td,90))out.push({date:f.leaseEnd,early:true,txt:`Λήγει το μισθωτήριο · ${esc(f.name)}`});
+  // VAT refund of the special scheme: last year's sales, by 15 December.
+  {const y=+td.slice(0,4)-1,o=vatYears().find(x=>x.y===y),dl=`${y+1}-12-15`;if(o&&o.refund>0&&td>=`${y+1}-09-01`&&td<=dl)out.push({date:dl,txt:`Αίτηση επιστροφής ΦΠΑ για τις πωλήσεις του ${y} (περίπου ${money(o.refund)}) στο myBusinessSupport`})}
+  return out.filter(r=>r.early||r.date<=soon).sort((a,b)=>a.date.localeCompare(b.date))}
+function remindersHtml(){const rs=reminders(),td=today();
+  return `<div class="card" id="remCard"><div class="row" style="justify-content:space-between"><h2>Υπενθυμίσεις</h2><button type="button" data-act="remNew">+ Υπενθύμιση</button></div>
+  <form id="remForm" class="fields" hidden><label class="f">Πότε<input id="remDate" type="date" required value="${addDays(td,7)}"></label><label class="f" style="flex:2 1 220px">Τι<input id="remText" required placeholder="π.χ. Ψεκασμός για δάκο, πληρωμή ΕΛΓΑ"></label>
+    <label class="f">Αγροτεμάχιο<select id="remField"><option value="">Όλο το κτήμα</option>${fieldsSorted().map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join('')}</select></label>
+    <div class="row" style="align-self:end"><button class="primary" type="submit">Αποθήκευση</button><button type="button" data-act="remCancel">Ακύρωση</button></div></form>
+  ${rs.length?rs.map(r=>`<div class="rem"><span class="when ${r.date<td?'late':''}">${r.date===td?'Σήμερα':fmtDate(r.date)}</span><span class="txt">${r.txt}</span>${r.own?`<button type="button" data-act="remDone" data-arg="${r.id}">Έγινε</button>`:''}</div>`).join(''):'<p class="note">Τίποτα για τις επόμενες 30 ημέρες.</p>'}</div>`}
+function bindReminders(){const f=$('#remForm');if(!f)return;f.onsubmit=async ev=>{ev.preventDefault();const date=$('#remDate').value,text=$('#remText').value.trim();if(!isDate(date)||!text){toast('Γράψε πότε και τι');return}document.activeElement?.blur();
+  try{await db.collection('entries').add({kind:'note',fieldId:$('#remField').value||FARM,date,text,done:false,createdAt:Date.now(),updatedAt:Date.now()});toast('Η υπενθύμιση αποθηκεύτηκε')}catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code))}}}
+
+/* ---------- CAP payments, ΕΛΓΑ, budget, accountant ---------- */
+function subTypesHtml(st){const keys=new Set(st.map(s=>s.fieldId+'|'+s.season));const by={};
+  for(const e of S.entries.values()){if(e.kind!=='income'||e.incomeKind!=='subsidy'||!keys.has(e.fieldId+'|'+e.season))continue;const k=e.season;(by[k]??={})[e.subsidyType||'other']=(by[k][e.subsidyType||'other']||0)+num(e.amount)}
+  const ys=Object.keys(by).sort((a,b)=>b-a);if(!ys.length)return '';const used=SUB_TYPES.filter(([k])=>ys.some(y=>by[y][k]));
+  return `<div class="card"><h2>Επιδοτήσεις ανά είδος</h2><div class="tablewrap"><table class="rep"><thead><tr><th>Χρονιά</th>${used.map(([,n])=>`<th class="r">${n}</th>`).join('')}<th class="r">Σύνολο</th></tr></thead>
+  <tbody>${ys.map(y=>`<tr><td>${y}</td>${used.map(([k])=>`<td class="r">${by[y][k]?money(by[y][k]):'–'}</td>`).join('')}<td class="r"><b>${money(Object.values(by[y]).reduce((a,b)=>a+b,0))}</b></td></tr>`).join('')}</tbody></table></div>
+  <p class="note">Από τα έσοδα «Επιδότηση», με το είδος που διάλεξες σε καθένα. Σύγκρινέ τα με τις πληρωμές που δείχνει το myAGRO.</p></div>`}
+function elgaRows(){const dmg=[...S.entries].filter(([,e])=>e.kind==='work'&&e.damage).map(([id,e])=>({id,...e})).sort((a,b)=>b.date.localeCompare(a.date));
+  const comp=[...S.entries.values()].filter(e=>e.kind==='income'&&e.incomeKind==='elga');return {dmg,comp}}
+function elgaHtml(){const {dmg,comp}=elgaRows();const fee={};for(const e of S.entries.values())if(e.kind!=='income')for(const l of e.lines||[])if(l.cat==='insurance')fee[e.date.slice(0,4)]=(fee[e.date.slice(0,4)]||0)+num(l.amount);
+  for(const e of S.entries.values())if(e.kind==='farm'){}
+  if(!dmg.length&&!comp.length&&!Object.keys(fee).length)return '';const paidBy=d=>comp.filter(c=>d&&normWord(c.decl||'')===normWord(d)).reduce((a,c)=>a+num(c.amount),0);
+  const ys=[...new Set([...Object.keys(fee),...comp.map(c=>c.date.slice(0,4))])].sort((a,b)=>b-a);
+  return `<div class="card"><h2>ΕΛΓΑ: ζημιές, αποζημιώσεις, εισφορές</h2>
+  ${dmg.length?`<div class="tablewrap"><table class="rep"><thead><tr><th>Ημερομηνία</th><th>Αγροτεμάχιο</th><th>Αιτία</th><th class="r">Ζημιά</th><th>Αρ. δήλωσης</th><th class="r">Αποζημίωση</th><th></th></tr></thead>
+  <tbody>${dmg.map(d=>{const p=paidBy(d.damage.decl);return `<tr><td>${fmtDate(d.date)}</td><td>${esc(S.fields.get(d.fieldId)?.name||'')}</td><td>${esc(d.damage.cause||'')}</td><td class="r">${num(d.damage.pct)?nf.format(num(d.damage.pct))+' %':'–'}</td><td>${esc(d.damage.decl||'–')}</td><td class="r">${p?money(p):'<span class="note">εκκρεμεί</span>'}</td><td>${d.photos?.length?`<button type="button" class="ghost" data-act="photoView" data-arg="entry:${d.id}">📷 ${d.photos.length}</button>`:''}</td></tr>`}).join('')}</tbody></table></div>`:''}
+  ${ys.length?`<div class="tablewrap"><table class="rep"><thead><tr><th>Έτος</th><th class="r">Εισφορά ΕΛΓΑ</th><th class="r">Αποζημιώσεις</th></tr></thead><tbody>${ys.map(y=>`<tr><td>${y}</td><td class="r">${fee[y]?money(fee[y]):'–'}</td><td class="r">${money(comp.filter(c=>c.date.startsWith(y)).reduce((a,c)=>a+num(c.amount),0))}</td></tr>`).join('')}</tbody></table></div>`:''}
+  <p class="note">Η ζημιά γράφεται με εργασία «${DAMAGE_TASK}», η αποζημίωση ως έσοδο «Αποζημίωση ΕΛΓΑ» με τον ίδιο αριθμό δήλωσης, η εισφορά ως έξοδο «Ασφάλιση ΕΛΓΑ».</p></div>`}
+function budgetHtml(){const fs=fieldsSorted();if(!fs.length)return '';const st=stats();const B=S.settings.budget||{};let tc=0,ti=0,ac=0,ai=0;
+  const rows=fs.map(f=>{const y=openSeason(f.id),s=st.find(x=>x.fieldId===f.id&&x.season===y)||{cost:0,sales:0,otherInc:0,subsidy:0};const b=B[y]?.[f.id]||{};const inc=s.sales+s.otherInc+s.subsidy;
+    tc+=num(b.cost);ti+=num(b.income);ac+=s.cost;ai+=inc;const pc=num(b.cost)?Math.round(s.cost/num(b.cost)*100):null;
+    return `<tr><td>${esc(f.name)} <span class="note">${seasonName(y,f.crop)}</span></td><td class="r"><input class="budIn" data-f="${f.id}" data-y="${y}" data-k="cost" inputmode="decimal" value="${b.cost?String(b.cost).replace('.',','):''}" aria-label="Προϋπολογισμός εξόδων ${esc(f.name)}"></td><td class="r">${money(s.cost)}${pc!=null?` <span class="note ${pc>100?'neg':''}">${pc}%</span>`:''}</td>
+      <td class="r"><input class="budIn" data-f="${f.id}" data-y="${y}" data-k="income" inputmode="decimal" value="${b.income?String(b.income).replace('.',','):''}" aria-label="Προϋπολογισμός εσόδων ${esc(f.name)}"></td><td class="r">${money(inc)}</td></tr>`}).join('');
+  return `<div class="card bud"><h2>Προϋπολογισμός τρέχουσας χρονιάς</h2><div class="tablewrap"><table class="rep"><thead><tr><th>Αγροτεμάχιο</th><th class="r">Έξοδα: σχέδιο (€)</th><th class="r">Έξοδα: μέχρι τώρα</th><th class="r">Έσοδα: σχέδιο (€)</th><th class="r">Έσοδα: μέχρι τώρα</th></tr></thead>
+  <tbody>${rows}<tr><td><b>Σύνολο</b></td><td class="r"><b>${money(tc)}</b></td><td class="r"><b>${money(ac)}</b></td><td class="r"><b>${money(ti)}</b></td><td class="r"><b>${money(ai)}</b></td></tr></tbody></table></div>
+  <p class="note">Γράψε τι περιμένεις να ξοδέψεις και να εισπράξεις φέτος. Το ποσοστό δείχνει πόσο από τα σχεδιασμένα έξοδα έχει ήδη φύγει. Τα έσοδα μετρούν και την επιδότηση (ή την εκτίμησή της).</p></div>`}
+function bindBudget(el){el.querySelectorAll('.budIn').forEach(i=>i.onchange=async()=>{normTyped(i);const v=num(i.value);if(v<0){toast('Οι αριθμοί δεν μπορεί να είναι αρνητικοί');return}
+  const B=JSON.parse(JSON.stringify(S.settings.budget||{}));const o=((B[i.dataset.y]??={})[i.dataset.f]??={});o[i.dataset.k]=v;
+  try{await db.doc('settings/main').set({...S.settings,budget:B,updatedAt:Date.now()})}catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code))}})}
+function acctYears(){return [...new Set([...S.entries.values()].map(e=>+e.date.slice(0,4)))].sort((a,b)=>b-a)}
+function acctHtml(){const ys=acctYears();if(!ys.length)return '';
+  return `<div class="card"><div class="row" style="justify-content:space-between"><h2>Για τον λογιστή</h2><div class="row"><label class="f" style="min-width:110px">Έτος<select id="acctYear">${ys.map(y=>`<option>${y}</option>`).join('')}</select></label><button type="button" data-act="acctXlsx" style="align-self:end">Excel</button></div></div>
+  <p class="note">Ένα αρχείο ανά ημερολογιακό έτος: πωλήσεις με αγοραστή, παραστατικό και ΦΠΑ, σύνολα ανά αγοραστή, επιδοτήσεις ανά είδος, αποζημιώσεις ΕΛΓΑ, έξοδα με παραστατικό και αγορές αποθήκης.</p></div>`}
+async function exportAcct(){if(typeof XLSX==='undefined'){toast('Η βιβλιοθήκη Excel δεν φόρτωσε');return}const y=String($('#acctYear')?.value||'');const pct=num(S.settings.vatPct??6);
+  const inY=e=>e.date.startsWith(y),fname=id=>id===FARM?'Όλο το κτήμα':S.fields.get(id)?.name||'',r2=x=>Math.round(x*100)/100;
+  const sales=[...S.entries.values()].filter(e=>e.kind==='income'&&SALE_KINDS.has(e.incomeKind)&&inY(e)).sort((a,b)=>a.date.localeCompare(b.date));
+  const wb=XLSX.utils.book_new();const add=(rows,name)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.length?rows:[{'':'Καμία εγγραφή'}]),name);
+  add(sales.map(e=>({'Ημερομηνία':fmtDate(e.date),'Αγροτεμάχιο':fname(e.fieldId),'Είδος':INC[e.incomeKind]?.name,'Αγοραστής':e.buyer||'','Αρ. παραστατικού':e.invoice||'','Κιλά':num(e.qty)||'','Ποσό (€)':r2(num(e.amount)),[`ΦΠΑ ${pct}% (€)`]:e.invoice?r2(num(e.amount)*pct/100):''})),'Πωλήσεις');
+  const byB={};for(const e of sales){const k=e.buyer||'(χωρίς αγοραστή)';const o=byB[k]??={n:0,amt:0,doc:0};o.n++;o.amt+=num(e.amount);if(e.invoice)o.doc+=num(e.amount)}
+  add(Object.entries(byB).map(([k,o])=>({'Αγοραστής':k,'Πωλήσεις':o.n,'Σύνολο (€)':r2(o.amt),'Με παραστατικό (€)':r2(o.doc),[`ΦΠΑ ${pct}% (€)`]:r2(o.doc*pct/100)})),'Ανά αγοραστή');
+  add([...S.entries.values()].filter(e=>e.kind==='income'&&e.incomeKind==='subsidy'&&inY(e)).map(e=>({'Ημερομηνία':fmtDate(e.date),'Αγροτεμάχιο':fname(e.fieldId),'Είδος':SUB_NAME[e.subsidyType]||'Άλλη','Ποσό (€)':r2(num(e.amount))})),'Επιδοτήσεις');
+  add([...S.entries.values()].filter(e=>(e.kind==='income'&&e.incomeKind==='elga'||e.damage)&&inY(e)).map(e=>({'Ημερομηνία':fmtDate(e.date),'Αγροτεμάχιο':fname(e.fieldId),'Τι':e.damage?'Ζημιά: '+(e.damage.cause||''):'Αποζημίωση','Ζημιά (%)':e.damage?num(e.damage.pct)||'':'','Αρ. δήλωσης':e.damage?.decl||e.decl||'','Ποσό (€)':e.damage?'':r2(num(e.amount))})),'ΕΛΓΑ');
+  add([...S.entries.values()].filter(e=>e.kind!=='income'&&e.invoice&&inY(e)).map(e=>({'Ημερομηνία':fmtDate(e.date),'Αγροτεμάχιο':fname(e.fieldId),'Εργασία':e.task,'Αρ. παραστατικού':e.invoice,'Ποσό (€)':r2(entryCost(e))})),'Έξοδα με παραστατικό');
+  add([...S.extra.values()].filter(e=>e.kind==='stock'&&inY(e)).map(e=>({'Ημερομηνία':fmtDate(e.date),'Προϊόν':e.name,'Ποσότητα':num(e.qty),'Μονάδα':e.unit,'Κατάστημα':e.supplier||'','Αρ. παραστατικού':e.invoice||'','Ποσό (€)':r2(num(e.amount))})),'Αγορές αποθήκης');
+  if(await saveFile(`Agrologio_logistis_${y}.xlsx`,new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})])))toast('Το Excel αποθηκεύτηκε')}
 function readProds(){return [...$('#eProds').querySelectorAll('.prod')].map(d=>{const v=c=>d.querySelector(c).value.trim();const type=v('.pType');
-  return {type,name:v('.pName'),active:v('.pActive'),dose:num(v('.pDose')),unit:v('.pUnit'),target:v('.pTarget'),...(type==='chem'?{phi:Math.round(num(v('.pPhi'))),licence:v('.pLic')}:{})}}).filter(p=>p.name||p.active)}
+  const rp=Math.round(num(v('.pRep')));return {type,name:v('.pName'),active:v('.pActive'),dose:num(v('.pDose')),unit:v('.pUnit'),target:v('.pTarget'),...(type==='chem'?{phi:Math.round(num(v('.pPhi'))),licence:v('.pLic')}:{}),...(rp?{repeat:rp}:{})}}).filter(p=>p.name||p.active)}
 // Suggestions from earlier entries, so a product is typed once.
-function fillLists(){const n=new Set(),a=new Set(),b=new Set();for(const e of S.entries.values()){for(const p of e.products||[]){if(p.name)n.add(p.name);if(p.active)a.add(p.active)}if(e.buyer)b.add(e.buyer)}
+function fillLists(){const n=new Set(),a=new Set(),b=new Set(),dn=new Set();for(const e of S.entries.values()){for(const p of e.products||[]){if(p.name)n.add(p.name);if(p.active)a.add(p.active)}if(e.buyer)b.add(e.buyer);if(e.damage?.decl)dn.add(e.damage.decl)}
+  for(const e of S.extra.values())if(e.kind==='stock'&&e.name)n.add(e.name);$('#declNos').innerHTML=[...dn].map(v=>`<option value="${esc(v)}">`).join('');
   const o=x=>[...x].sort((p,q)=>p.localeCompare(q,'el')).map(v=>`<option value="${esc(v)}">`).join('');$('#prodNames').innerHTML=o(n);$('#prodActives').innerHTML=o(a);$('#buyerNames').innerHTML=o(b)}
 $('#addProd').onclick=()=>{addProd();$('#eProds').lastElementChild.querySelector('.pName').focus()};
 function oilStockFor(fid,season,excludeId){let st=0,sold=0;for(const [id,e] of S.entries){if(e.fieldId!==fid||e.season!==season||(excludeId&&id===excludeId))continue;
@@ -1234,11 +1420,13 @@ function readLines(){return [...$('#eLines').children].map(el=>{const cat=el.que
   if(isEur)return {cat,amount:num(el.querySelector('.la').value)};const qty=num(el.querySelector('.lq').value),price=num(el.querySelector('.lp').value);return {cat,qty,price,amount:Math.round(qty*price*100)/100}}).filter(l=>l.amount>0)}
 function calcLines(){let t=0;[...$('#eLines').children].forEach(el=>{const cat=el.querySelector('.lc').value;const a=CAT[cat].unit==='€'?num(el.querySelector('.la').value):num(el.querySelector('.lq').value)*num(el.querySelector('.lp').value);t+=a;el.querySelector('.amt').textContent=a?eur2.format(a):''});$('#eTotal').textContent=eur2.format(t);if(!$('#mfBox').hidden)mfHint()}
 function resetEntry(fid,keepDate){editing=null;seasonTouched=false;incomeLead='amount';$('#entryTitle').textContent='Νέα καταχώριση';$('#eCancel').hidden=true;$('#eDelete').hidden=true;$('#eDelete').textContent='Διαγραφή';delete $('#eDelete').dataset.sure;
-  $('#entryForm').reset();$('#eDate').value=keepDate||today();if(fid&&(S.fields.has(fid)||fid===FARM))$('#eField').value=fid;$('#eLines').innerHTML='';$('#eProds').innerHTML='';$('#eTask').innerHTML='';fillLists();syncEntryForm(true);addLine(defaultLine());setKind('work')}
+  $('#entryForm').reset();photosLoad([]);$('#eDate').value=keepDate||today();if(fid&&(S.fields.has(fid)||fid===FARM))$('#eField').value=fid;$('#eLines').innerHTML='';$('#eProds').innerHTML='';$('#eTask').innerHTML='';fillLists();syncEntryForm(true);addLine(defaultLine());setKind('work')}
 function newEntry(fid){resetEntry(fid);go('entry')}
 function editEntry(id){let e=S.entries.get(id);if(!e)return;if(e.task==='Μεταφορά στο ελαιοτριβείο')e={...e,task:'Μεταφορά στο ελαιουργείο'};editing={id,...e};seasonTouched=true;
   $('#entryTitle').textContent='Αλλαγή καταχώρισης';$('#eCancel').hidden=false;$('#eDelete').hidden=false;
   $('#eField').value=e.fieldId;$('#eDate').value=e.date;$('#eNote').value=e.note||'';kind=e.kind==='income'?'income':'work';$('#eProds').innerHTML='';fillLists();(e.products||[]).forEach(addProd);
+  $('#eInvoice').value=e.kind!=='income'?e.invoice||'':'';$('#dCause').value=e.damage?.cause||DAMAGE_CAUSES[0];$('#dPct').value=e.damage?.pct??'';$('#dDecl').value=e.damage?.decl||'';
+  $('#iSubType').value=e.subsidyType||'basic';$('#iDecl').value=e.decl||'';photosLoad(e.photos);
   $('#kindWork').setAttribute('aria-pressed',kind==='work');$('#kindIncome').setAttribute('aria-pressed',kind==='income');$('#workPart').hidden=kind!=='work';$('#incomePart').hidden=kind!=='income';
   syncEntryForm(false);
   if(e.kind==='farm'){scopeOptions(e.scope||'all');const ft=['Αγορά πετρελαίου','Άλλο κοινό έξοδο'];$('#eTask').value=ft.includes(e.task)?e.task:'__other';$('#eTaskOther').value=ft.includes(e.task)?'':e.task;syncTask();$('#eLines').innerHTML='';(e.lines?.length?e.lines:[{cat:'diesel'}]).forEach(addLine)}
@@ -1263,10 +1451,15 @@ async function saveEntry(ev){ev.preventDefault();if(!db)return;const fid=$('#eFi
   let d;if(fid===FARM){let task=$('#eTask').value;if(task==='__other')task=$('#eTaskOther').value.trim()||'Κοινό έξοδο';const lines=readLines();if(!lines.length){toast('Βάλε τουλάχιστον ένα έξοδο');return}
     const scope=$('#eScope').value;const alloc=editing&&(editing.scope||'all')===scope&&Array.isArray(editing.alloc)&&editing.date===base.date?editing.alloc:computeAlloc(scope,base.date);
     if(!alloc.length){toast(`Δεν υπάρχουν αγροτεμάχια για «${SCOPES[scope]}». Διάλεξε άλλη κατανομή.`);return}
-    d={fieldId:FARM,kind:'farm',scope,alloc,date:base.date,task,lines,note:base.note,updatedAt:base.updatedAt,example:false}}
+    d={fieldId:FARM,kind:'farm',scope,alloc,date:base.date,task,lines,note:base.note,updatedAt:base.updatedAt,example:false};const inv=$('#eInvoice').value.trim();if(inv)d.invoice=inv}
   else if(kind==='work'){let task=$('#eTask').value;if(task==='__other')task=$('#eTaskOther').value.trim()||'Άλλη εργασία';const h=HARVEST.has(task);const prods=$('#sprayPart').hidden?[]:readProds();
     d={...base,task,lines:MILL.has(task)?[]:readLines(),kgFruit:h?num($('#eKgFruit').value):0,kgOil:h?num($('#eKgOil').value):0,harvestDone:h&&$('#eHarvestDone').checked};
     if(prods.length||editing?.products?.length)d.products=prods;
+    {const inv=$('#eInvoice').value.trim();if(inv)d.invoice=inv}
+    if(task===DAMAGE_TASK)d.damage={cause:$('#dCause').value,pct:num($('#dPct').value),decl:$('#dDecl').value.trim()};
+    // Products taken from the store: their cost goes in by itself (and is worked out again on every save).
+    if(!MILL.has(task)){d.lines=d.lines.filter(l=>!l.fromStock);for(const p of prods){const st=stockOf(p.name);if(!st||!num(p.dose))continue;const use=stockUse(p,num(S.fields.get(fid)?.stremmata),st.unit);
+      if(use>0)d.lines.push({cat:p.type==='fert'?'fert':'chem',qty:r1(use*1000)/1000,price:Math.round(st.avg*1000)/1000,amount:Math.round(use*st.avg*100)/100,fromStock:st.name})}}
     if(d.harvestDone)d.fieldStr=num(S.fields.get(fid)?.stremmata);
     if(editing?.harvestDone&&!d.harvestDone&&!confirm(reopenWarn(editing)))return;
     // D3: harvests out of order (a later season with an earlier date) move costs to the wrong year.
@@ -1282,19 +1475,24 @@ async function saveEntry(ev){ev.preventDefault();if(!db)return;const fid=$('#eFi
   else{const k=INC[$('#iKind').value];let amount=num($('#iAmount').value);const qty=num($('#iQty').value),price=num($('#iPrice').value);if(k.unit==='κιλά'&&!amount)amount=Math.round(qty*price*100)/100;let pr=price;if(k.unit==='κιλά'&&qty&&amount)pr=Math.round(amount/qty*1000)/1000;
     if(!amount){toast('Βάλε ποσό ή κιλά και τιμή');return}
     if(k.id==='oil'&&qty){const o=oilStockFor(fid,base.season,editing?.id);if(!o.stored&&!editing&&!confirm(`Δεν υπάρχει Άλεση για τη χρονιά ${seasonName(base.season,'olive')} σε αυτό το αγροτεμάχιο, άρα δεν φαίνεται από πού βγαίνει το λάδι.\n\nΝα αποθηκευτεί η πώληση έτσι;`))return;if(o.stored&&qty>o.left+1e-9&&!confirm(`Πουλάς ${nf.format(qty)} κιλά, αλλά σε φύλαξη για αυτή τη χρονιά υπάρχουν ${nf.format(Math.max(0,o.left))} κιλά.\n\nΝα αποθηκευτεί έτσι;`))return}
-    d={...base,incomeKind:k.id,qty:k.unit==='κιλά'?qty:0,price:k.unit==='κιλά'?pr:0,amount};if(SALE_KINDS.has(k.id)){d.buyer=$('#iBuyer').value.trim();d.invoice=$('#iInvoice').value.trim()}}
+    d={...base,incomeKind:k.id,qty:k.unit==='κιλά'?qty:0,price:k.unit==='κιλά'?pr:0,amount};if(SALE_KINDS.has(k.id)){d.buyer=$('#iBuyer').value.trim();d.invoice=$('#iInvoice').value.trim()}
+    if(k.id==='subsidy')d.subsidyType=$('#iSubType').value;if(k.id==='elga')d.decl=$('#iDecl').value.trim()}
+  // Photos: new ones are written first, removed ones deleted after the entry is saved.
+  try{for(const ph of ePhotos)if(ph.isNew){await db.doc('photos/'+ph.id).set({data:ph.data,name:ph.name||'',createdAt:Date.now()});ph.isNew=false}}catch(e){toast('Δεν αποθηκεύτηκε η φωτογραφία: '+(e.message||e.code));return}
+  if(ePhotos.length||editing?.photos?.length)d.photos=ePhotos.map(p=>p.id);
+  const dropPh=(editing?.photos||[]).filter(id=>!ePhotos.some(p=>p.id===id));
   const mf=kind==='work'&&!editing&&fid!==FARM?mfTargets():[];
   if(mf.length){$('#eSave').disabled=true;
     try{const ids=[fid,...mf],split=$('#mfMode').value==='split',group=Date.now().toString(36);
       const scale=(l,k)=>{if(k===1)return {...l};const o={...l,amount:Math.round(l.amount*k*100)/100};if(l.qty)o.qty=Math.round(l.qty*k*1000)/1000;return o};
-      const ops=mfShares(ids).map((x,i)=>({c:'entries',id:null,data:{...d,fieldId:x.id,season:x.id===fid?d.season:seasonAtDate(x.id,d.date),...(d.harvestDone?{fieldStr:num(S.fields.get(x.id)?.stremmata)}:{}),lines:d.lines.map(l=>scale(l,split?x.share:1)),group,createdAt:Date.now()+i}}));
+      const ops=mfShares(ids).map((x,i)=>({c:'entries',id:null,data:{...d,...(x.id===fid||!d.photos?{}:{photos:[]}),fieldId:x.id,season:x.id===fid?d.season:seasonAtDate(x.id,d.date),...(d.harvestDone?{fieldStr:num(S.fields.get(x.id)?.stremmata)}:{}),lines:d.lines.map(l=>scale(l,split?x.share:1)),group,createdAt:Date.now()+i}}));
       // Rounding: the cents left over go to the first field, so the parts add up to what was written.
       if(split)d.lines.forEach((l,j)=>{const sum=ops.reduce((a,o)=>a+o.data.lines[j].amount,0);ops[0].data.lines[j].amount=Math.round((ops[0].data.lines[j].amount+l.amount-sum)*100)/100});
       await writeMany(ops);toast(`Καταχωρίστηκε σε ${ids.length} αγροτεμάχια`);resetEntry(fid,d.date);renderEntrySummary()}
     catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code))}finally{$('#eSave').disabled=false}
     return}
   $('#eSave').disabled=true;
-  try{if(editing){await db.doc('entries/'+editing.id).set({...d,createdAt:editing.createdAt||Date.now()});lastSaved=editing.id}else{const ref=await db.collection('entries').add({...d,createdAt:Date.now()});lastSaved=ref?.id}
+  try{if(editing){await db.doc('entries/'+editing.id).set({...d,createdAt:editing.createdAt||Date.now()});lastSaved=editing.id;for(const pid of dropPh)db.doc('photos/'+pid).delete().catch(()=>{})}else{const ref=await db.collection('entries').add({...d,createdAt:Date.now()});lastSaved=ref?.id}
     // After a change, back to the Ημερολόγιο where it came from; after a new entry, the next one keeps the same date (handy for old papers).
     if(editing){toast('Η αλλαγή αποθηκεύτηκε');resetEntry(fid);go('log');renderLog()}
     else{toast('Καταχωρίστηκε');resetEntry(fid,d.date);renderEntrySummary();$('#entrySummary').scrollIntoView({behavior:'smooth',block:'start'})}}
@@ -1311,7 +1509,7 @@ function confirmDelete(e){if(e.harvestDone&&!confirm(reopenWarn(e)))return false
   return true}
 // «Επανάληψη»: the same task, cost lines and note as a new entry dated today; only what differs needs changing.
 function repeatEntry(id){const e=S.entries.get(id);if(!e)return;editEntry(id);
-  editing=null;seasonTouched=false;$('#entryTitle').textContent='Νέα καταχώριση (επανάληψη)';$('#eCancel').hidden=true;$('#eDelete').hidden=true;
+  editing=null;seasonTouched=false;photosLoad([]);$('#entryTitle').textContent='Νέα καταχώριση (επανάληψη)';$('#eCancel').hidden=true;$('#eDelete').hidden=true;
   $('#eDate').value=today();syncEntryForm(true);
   if(e.kind==='income'){$('#iQty').value='';$('#iAmount').value='';$('#iInvoice').value='';incomeHint()}
   toast('Αντιγράφηκε με σημερινή ημερομηνία. Άλλαξε ό,τι διαφέρει και πάτα Αποθήκευση.')}
@@ -1482,7 +1680,9 @@ async function writeMany(ops,onProgress){bulkBusy=true;
   finally{bulkBusy=false;memo.clear();render()}}
 
 /* ---------- backup ---------- */
-async function exportBackup(){const o={app:'katastixo',version:2,exportedAt:new Date().toISOString(),fields:Object.fromEntries(S.fields),entries:Object.fromEntries(S.entries),settings:S.settings,deleted:S.deleted};
+async function exportBackup(){const o={app:'katastixo',version:2,exportedAt:new Date().toISOString(),fields:Object.fromEntries(S.fields),entries:{...Object.fromEntries(S.entries),...Object.fromEntries(S.extra)},settings:S.settings,deleted:S.deleted};
+  // Photos travel in the copy too (each one is already made small).
+  const pids=[...S.entries.values(),...S.extra.values()].flatMap(e=>e.photos||[]);if(pids.length){o.photos={};for(const pid of pids){try{const d=await db.doc('photos/'+pid).get();if(d.exists)o.photos[pid]=d.data()}catch{}}}
   const ok=await saveFile(`Agrologio_antigrafo_${today()}.json`,JSON.stringify(o,null,1));if(ok)toast('Το αντίγραφο αποθηκεύτηκε');return ok}
 // Records that the app can show safely. Anything else is skipped (on import) or ignored (on load), so a bad record cannot lock the app.
 const isDate=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d);
@@ -1492,7 +1692,7 @@ const okSeason=y=>y!=null&&y!==''&&Number.isInteger(+y)&&+y>1900&&+y<3000;
 // I6: cost lines and a shared cost's split must have the right shape, or the numbers come out wrong without a sign.
 const okLines=l=>l==null||(Array.isArray(l)&&l.every(x=>x&&typeof x==='object'&&!Array.isArray(x)&&isFinite(num(x.amount))));
 const okAlloc=a=>a==null||(Array.isArray(a)&&a.every(x=>x&&typeof x.id==='string'&&isFinite(+x.share)&&+x.share>=0));
-const validEntry=(e,fieldIds)=>!!e&&typeof e==='object'&&!Array.isArray(e)&&isDate(e.date)&&okLines(e.lines)&&okAlloc(e.alloc)&&(e.kind==='farm'?Array.isArray(e.lines):(['work','income'].includes(e.kind)&&fieldIds.has(e.fieldId)&&okSeason(e.season)));
+const validEntry=(e,fieldIds)=>!!e&&typeof e==='object'&&!Array.isArray(e)&&isDate(e.date)&&okLines(e.lines)&&okAlloc(e.alloc)&&(e.kind==='stock'?typeof e.name==='string'&&!!e.name:e.kind==='note'?typeof e.text==='string':e.kind==='farm'?Array.isArray(e.lines):(['work','income'].includes(e.kind)&&fieldIds.has(e.fieldId)&&okSeason(e.season)));
 async function importBackup(file){const box=$('#bkConfirm');let o;
   try{o=JSON.parse(await file.text());if(!o||o.app!=='katastixo'||typeof o.fields!=='object'||typeof o.entries!=='object'||!o.fields||!o.entries)throw 0}catch{box.hidden=false;box.innerHTML='<span class="neg">Το αρχείο δεν είναι αντίγραφο του Αγρολογίου.</span>';return}
   // C5: the same own crop made on two devices has two keys; match them by name so there is one «Αμυγδαλιά», not two.
@@ -1505,7 +1705,7 @@ async function importBackup(file){const box=$('#bkConfirm');let o;
   const fileIds=new Set(fields.map(([id])=>id));
   const cropOf=id=>(o.fields[id]&&o.fields[id].crop)||S.fields.get(id)?.crop;
   // Very old copies have no season: take it from the date.
-  const entries=Object.entries(o.entries).map(([id,e])=>[id,e&&typeof e==='object'&&e.kind!=='farm'&&isDate(e.date)?(okSeason(e.season)?(typeof e.season==='number'?e:{...e,season:+e.season}):{...e,season:defaultSeason(cropOf(e.fieldId),e.date)}):e]).filter(([,e])=>validEntry(e,ids));
+  const entries=Object.entries(o.entries).map(([id,e])=>[id,e&&typeof e==='object'&&!['farm','stock','note'].includes(e.kind)&&isDate(e.date)?(okSeason(e.season)?(typeof e.season==='number'?e:{...e,season:+e.season}):{...e,season:defaultSeason(cropOf(e.fieldId),e.date)}):e]).filter(([,e])=>validEntry(e,ids));
   const bad=Object.keys(o.fields).length-fields.length+Object.keys(o.entries).length-entries.length;
   const sets=o.settings&&typeof o.settings==='object'&&!Array.isArray(o.settings)?o.settings:null;
   const ed=new Date(o.exportedAt||'');const when=isFinite(ed)?` (αντίγραφο της ${fmtDate(localIso(ed))})`:'';
@@ -1536,12 +1736,15 @@ async function importBackup(file){const box=$('#bkConfirm');let o;
     $('#bkGo').disabled=true;
     try{if(native)await window.katastixoNative.backup('πριν-την-εισαγωγή');
       const ops=[];
-      if(replace){const fk=new Set(fields.map(([id])=>id)),ek=new Set(entries.filter(([,d])=>d.kind==='farm'||fileIds.has(d.fieldId)).map(([id])=>id));
-        for(const id of S.entries.keys())if(!ek.has(id))ops.push({c:'entries',id,del:true});
+      if(replace){const fk=new Set(fields.map(([id])=>id)),ek=new Set(entries.filter(([,d])=>d.kind==='farm'||EXTRA_KINDS.has(d.kind)||fileIds.has(d.fieldId)).map(([id])=>id));
+        for(const id of [...S.entries.keys(),...S.extra.keys()])if(!ek.has(id))ops.push({c:'entries',id,del:true});
         for(const id of S.fields.keys())if(!fk.has(id))ops.push({c:'fields',id,del:true})}
       // I4: after a full replace only the file's fields exist, so entries of other fields would be hidden orphans.
-      if(replace){for(const [id,d] of fields)ops.push({c:'fields',id,data:d});for(const [id,d] of entries)if(d.kind==='farm'||fileIds.has(d.fieldId))ops.push({c:'entries',id,data:d})}
+      if(replace){for(const [id,d] of fields)ops.push({c:'fields',id,data:d});for(const [id,d] of entries)if(d.kind==='farm'||EXTRA_KINDS.has(d.kind)||fileIds.has(d.fieldId))ops.push({c:'entries',id,data:d})}
       else ops.push(...plan.ops);
+      // Photos of the copy: a photo never changes once taken, so the ones missing here are simply added.
+      const fileP=o.photos&&typeof o.photos==='object'?o.photos:{};const wantP=new Set(ops.filter(x=>x.c==='entries'&&!x.del).flatMap(x=>x.data.photos||[]));
+      for(const [pid,ph] of Object.entries(fileP))if(wantP.has(pid)&&ph&&typeof ph.data==='string'&&ph.data.startsWith('data:image/'))ops.push({c:'photos',id:pid,data:ph});
       const fileCrops=sets?fileCrops0:{};
       const needCrops=Object.fromEntries(fields.map(([,f])=>f.crop).filter(c=>isCustomCrop(c)&&fileCrops[c]?.name&&!S.settings.crops?.[c]?.name).map(c=>[c,fileCrops[c]]));
       if(sets&&$('#bkSettings')?.checked)ops.push({c:'settings',id:'main',data:{...S.settings,...sets,subsidy:{...(S.settings.subsidy||{}),...(sets.subsidy||{})},crops:{...(S.settings.crops||{}),...fileCrops},subsidyBySeason:{...(S.settings.subsidyBySeason||{}),...(sets.subsidyBySeason||{})}}});
@@ -1567,11 +1770,12 @@ function openWipe(all){const phrase=all?'ΔΙΑΓΡΑΦΗ ΟΛΩΝ':'ΔΙΑΓΡ�
   $('#wipeBackup').onclick=async()=>{const ok=await exportBackup();$('#wipeBkNote').textContent=ok?'Το αντίγραφο αποθηκεύτηκε. Μπορείς να συνεχίσεις.':'Δεν αποθηκεύτηκε αντίγραφο.'};
   goBtn.onclick=async()=>{if(normWord(inp.value)!==phrase)return;goBtn.disabled=true;goBtn.textContent='Διαγραφή…';
     try{if(!all){const sets=$('#wipeSets')?.checked;try{await window.katastixoNative?.backup?.('πριν-τη-διαγραφή')}catch{}
-        await writeMany([...[...S.entries.keys()].map(id=>({c:'entries',id,del:true})),...(sets&&S.settingsSaved?[S.settings.crops&&Object.keys(S.settings.crops).length?{c:'settings',id:'main',data:{crops:S.settings.crops}}:{c:'settings',id:'main',del:true}]:[])]);
+        await writeMany([...[...S.entries.keys(),...S.extra.keys()].map(id=>({c:'entries',id,del:true})),...[...S.entries.values(),...S.extra.values()].flatMap(e=>e.photos||[]).map(id=>({c:'photos',id,del:true})),...(sets&&S.settingsSaved?[S.settings.crops&&Object.keys(S.settings.crops).length?{c:'settings',id:'main',data:{crops:S.settings.crops}}:{c:'settings',id:'main',del:true}]:[])]);
         box.hidden=true;box.innerHTML='';$('#logSearch').value='';logOpen.clear();lineEdit=null;logConfirm=null;lastSaved=null;editing=null;$('#logSeason').value='';$('#repSeason').value='closed';resetEntry();go('home');
         toast(`Οι καταχωρίσεις διαγράφηκαν${sets?' μαζί με τις ρυθμίσεις':''}. Τα αγροτεμάχια έμειναν.`);return}
       if(window.katastixoNative?.reset){await window.katastixoNative.reset();location.reload();return}
-      for(const id of [...S.entries.keys()])await rawRef('entries/'+id).delete();
+      for(const pid of [...S.entries.values(),...S.extra.values()].flatMap(e=>e.photos||[]))await rawRef('photos/'+pid).delete().catch(()=>{});
+      for(const id of [...S.entries.keys(),...S.extra.keys()])await rawRef('entries/'+id).delete();
       if(all){for(const id of [...S.fields.keys()])await rawRef('fields/'+id).delete();await db.doc('settings/main').delete();await db.doc('settings/deleted').delete().catch(()=>{});S.deleted={fields:{},entries:{}}}
       box.hidden=true;box.innerHTML='';$('#logSearch').value='';try{localStorage.removeItem('agrologio-guide-off')}catch{}logOpen.clear();lineEdit=null;logConfirm=null;lastSaved=null;editing=null;$('#fieldFormCard').hidden=true;$('#kmlImport').hidden=true;$('#bkConfirm').hidden=true;$('#logField').value='';$('#logSeason').value='';$('#repSeason').value='closed';resetEntry();go('home');toast('Όλα τα δεδομένα διαγράφηκαν. Η εφαρμογή ξεκινάει από την αρχή.')}
     catch(e){toast('Η διαγραφή σταμάτησε: '+(e.message||e.code));goBtn.disabled=false;goBtn.textContent='Οριστική διαγραφή'}}}
@@ -1587,7 +1791,7 @@ resetEntry();render();
   if(!db){S.loaded={f:true,e:true,s:true};render();return}
   const fail=e=>{$('#status').textContent='Σφάλμα φόρτωσης: '+(e?.message||e?.code||'')};
   db.collection('fields').onSnapshot(q=>{S.fields=new Map(q.docs.map(d=>[d.id,d.data()]).filter(([,f])=>validField(f)));memo.clear();S.loaded.f=true;if(!bulkBusy)scheduleRender()},fail);
-  db.collection('entries').onSnapshot(q=>{S.entries=new Map(q.docs.map(d=>[d.id,d.data()]).filter(([,e])=>!!e&&typeof e==='object'&&isDate(e.date)));memo.clear();S.loaded.e=true;if(!bulkBusy)scheduleRender()},fail);
+  db.collection('entries').onSnapshot(q=>{const all=q.docs.map(d=>[d.id,d.data()]).filter(([,e])=>!!e&&typeof e==='object'&&isDate(e.date));S.entries=new Map(all.filter(([,e])=>!EXTRA_KINDS.has(e.kind)));S.extra=new Map(all.filter(([,e])=>EXTRA_KINDS.has(e.kind)));memo.clear();S.loaded.e=true;if(!bulkBusy)scheduleRender()},fail);
   db.doc('settings/deleted').onSnapshot(d=>{const x=d.exists?d.data():{};S.deleted={fields:{...(x.fields||{})},entries:{...(x.entries||{})}}},()=>{});
   db.doc('settings/main').onSnapshot(d=>{S.settings={...DEFAULT_SETTINGS,...(d.exists?d.data():{})};S.settingsSaved=!!d.exists;memo.clear();S.loaded.s=true;if(!bulkBusy)scheduleRender()},fail);
 })();

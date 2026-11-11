@@ -38,7 +38,7 @@ function serveApp() {
 const trusted = e => { try { return String(e.senderFrame.url).startsWith(APP_ORIGIN + '/'); } catch { return false; } };
 const handle = (ch, fn) => ipcMain.handle(ch, (e, ...a) => { if (!trusted(e)) throw new Error('not allowed'); return fn(e, ...a); });
 
-const COLLECTIONS = ['fields', 'entries', 'settings'];
+const COLLECTIONS = ['fields', 'entries', 'settings', 'photos'];
 // --smoke-test (used by the release workflow with an empty --user-data-dir): start, load the page, exit 0. No dialogs, no updates.
 const SMOKE = app.commandLine.hasSwitch('smoke-test');
 let SQL, db, dbPath;
@@ -185,13 +185,15 @@ const check = c => { if (!COLLECTIONS.includes(c)) throw new Error('unknown coll
 
 handle('db:all', () => {
   const out = {};
-  for (const c of COLLECTIONS) {
+  // Photos are fetched one by one when shown (db:get), not all at start.
+  for (const c of COLLECTIONS.filter(x => x !== 'photos')) {
     out[c] = {};
     const r = db.exec(`SELECT id, data FROM ${c}`)[0];
     if (r) for (const [id, data] of r.values) out[c][id] = JSON.parse(data);
   }
   return out;
 });
+handle('db:get', (_e, c, id) => { check(c); const v = db.exec(`SELECT data FROM ${c} WHERE id = ?`, [String(id)])[0]?.values[0][0]; return v === undefined ? null : JSON.parse(v); });
 handle('db:set', (_e, c, id, data) => {
   if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('bad document');
   check(c); id = String(id);
@@ -285,7 +287,7 @@ async function restoreFromBackup() {
   for (const w of BrowserWindow.getAllWindows()) w.webContents.reload();
 }
 
-// Theme, text size and the other small page choices lived under file:// until 0.9.1; copy them once to the new app:// page.
+// Theme, text size and the other small page choices lived under file:// until 0.9.0; copy them once to the new app:// page.
 let moving = false;
 async function moveLocalChoices() {
   const done = db.exec("SELECT value FROM meta WHERE key = 'ls_moved'")[0];

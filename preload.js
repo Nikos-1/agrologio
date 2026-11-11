@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 const invoke = (...a) => ipcRenderer.invoke(...a).catch(e => { throw new Error(String((e && e.message) || e).replace(/^Error invoking remote method '[^']*': (\w*Error: )?/, '')); });
 contextBridge.exposeInMainWorld('katastixoNative', {
   all: () => invoke('db:all'),
+  get: (c, id) => invoke('db:get', c, id),
   set: (c, id, data) => invoke('db:set', c, id, data),
   del: (c, id) => invoke('db:delete', c, id),
   bulk: ops => invoke('db:bulk', ops),

@@ -1,7 +1,7 @@
 {
   "name": "agrologio",
   "productName": "Αγρολόγιο",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "Κόστος και έσοδα αγροτικών εργασιών ανά αγροτεμάχιο",
   "author": "Nick",
   "main": "main.js",
