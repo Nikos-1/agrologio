@@ -1,5 +1,6 @@
 // Αγρολόγιο: Electron main process. Data lives in a local SQLite file (sql.js).
-const { app, BrowserWindow, ipcMain, dialog, shell, Menu, nativeTheme, session } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu, nativeTheme, session, protocol, net } = require('electron');
+const { pathToFileURL } = require('url');
 const path = require('path');
 const fs = require('fs');
 const initSqlJs = require('sql.js/dist/sql-wasm.js');
@@ -10,7 +11,32 @@ app.commandLine.appendSwitch('lang', 'el');
 // The data folder is fixed by name, so renaming the program in the build settings can never "lose" the data.
 if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', path.join(app.getPath('appData'), 'Αγρολόγιο'));
 const logFile = () => path.join(app.getPath('userData'), 'agrologio.log');
-const log = (...a) => { try { fs.appendFileSync(logFile(), new Date().toISOString() + ' ' + a.map(String).join(' ') + '\n'); } catch {} };
+const log = (...a) => {
+  try {
+    const f = logFile();
+    // The log never grows past 1 MB: the older half is dropped.
+    try { if (fs.statSync(f).size > 1024 * 1024) { const b = fs.readFileSync(f); fs.writeFileSync(f, b.subarray(b.length >> 1)); } } catch {}
+    fs.appendFileSync(f, new Date().toISOString() + ' ' + a.map(String).join(' ') + '\n');
+  } catch {}
+};
+
+// The page is served from app://agrologio/ instead of file://, so a page script could never read other files on the computer.
+const APP_ORIGIN = 'app://agrologio';
+const APP_DIR = path.join(__dirname, 'app');
+protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
+function serveApp() {
+  protocol.handle('app', req => {
+    const u = new URL(req.url);
+    if (u.host !== 'agrologio') return new Response('', { status: 404 });
+    const file = path.normalize(path.join(APP_DIR, decodeURIComponent(u.pathname)));
+    if (!file.startsWith(APP_DIR + path.sep)) return new Response('', { status: 404 });
+    return net.fetch(pathToFileURL(file).toString());
+  });
+}
+// Only the program's own page may talk to the main process.
+// (URL.origin is "null" for custom schemes, so the address is compared as text.)
+const trusted = e => { try { return String(e.senderFrame.url).startsWith(APP_ORIGIN + '/'); } catch { return false; } };
+const handle = (ch, fn) => ipcMain.handle(ch, (e, ...a) => { if (!trusted(e)) throw new Error('not allowed'); return fn(e, ...a); });
 
 const COLLECTIONS = ['fields', 'entries', 'settings'];
 // --smoke-test (used by the release workflow with an empty --user-data-dir): start, load the page, exit 0. No dialogs, no updates.
@@ -95,9 +121,9 @@ async function openDb() {
   // An empty database is never copied over a daily backup (it would push a good copy out).
   const hasData = db.exec('SELECT (SELECT count(*) FROM fields) + (SELECT count(*) FROM entries)')[0].values[0][0] > 0;
   if (hasData) try { backupFile('ημερήσιο', stamp().slice(0, 10), 7); } catch {}
-  // The program may stay open for days: refresh the day's copy every 3 hours and on exit too.
+  // The program may stay open for days: refresh the day's copy every hour and on exit too.
   const daily = () => { try { const n = db.exec('SELECT (SELECT count(*) FROM fields) + (SELECT count(*) FROM entries)')[0].values[0][0]; if (n > 0) backupFile('ημερήσιο', stamp().slice(0, 10), 7); } catch (e) { log('daily backup', e.code || e.message); } };
-  if (!SMOKE) { setInterval(daily, 3 * 60 * 60 * 1000).unref?.(); app.on('before-quit', daily); }
+  if (!SMOKE) { setInterval(daily, 60 * 60 * 1000).unref?.(); app.on('before-quit', daily); }
   return true;
 }
 
@@ -157,7 +183,7 @@ function seedOnce() {
 
 const check = c => { if (!COLLECTIONS.includes(c)) throw new Error('unknown collection ' + c); return c; };
 
-ipcMain.handle('db:all', () => {
+handle('db:all', () => {
   const out = {};
   for (const c of COLLECTIONS) {
     out[c] = {};
@@ -166,13 +192,13 @@ ipcMain.handle('db:all', () => {
   }
   return out;
 });
-ipcMain.handle('db:set', (_e, c, id, data) => {
+handle('db:set', (_e, c, id, data) => {
   if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('bad document');
   check(c); id = String(id);
   return writeChange(c, id, () => db.run(`INSERT INTO ${c} (id, data, updated_at) VALUES (?, ?, datetime('now')) ON CONFLICT(id) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`, [id, JSON.stringify(data)]));
 });
 // Many writes at once (backup import, KML), saved to disk once. If the disk write fails, nothing of it stays.
-ipcMain.handle('db:bulk', (_e, ops) => {
+handle('db:bulk', (_e, ops) => {
   if (!Array.isArray(ops)) throw new Error('bad ops');
   const before = db.export();
   try {
@@ -194,32 +220,89 @@ ipcMain.handle('db:bulk', (_e, ops) => {
   }
   return true;
 });
-ipcMain.handle('db:backup', (_e, prefix) => { backupFile(String(prefix).replace(/[^\p{L}\p{N}-]/gu, '').slice(0, 40) || 'χειροκίνητο', stamp(), 5); return true; });
-ipcMain.handle('db:delete', (_e, c, id) => { check(c); id = String(id); return writeChange(c, id, () => db.run(`DELETE FROM ${c} WHERE id = ?`, [id])); });
-ipcMain.handle('file:save', async (e, filename, bytes) => {
+handle('db:backup', (_e, prefix) => { backupFile(String(prefix).replace(/[^\p{L}\p{N}-]/gu, '').slice(0, 40) || 'χειροκίνητο', stamp(), 5); return true; });
+handle('db:delete', (_e, c, id) => { check(c); id = String(id); return writeChange(c, id, () => db.run(`DELETE FROM ${c} WHERE id = ?`, [id])); });
+const SAVE_TYPES = ['pdf', 'xlsx', 'json', 'kmz', 'kml', 'csv'];
+handle('file:save', async (e, filename, bytes) => {
   const win = BrowserWindow.fromWebContents(e.sender);
-  const ext = path.extname(filename).slice(1);
+  // Only the kinds of file the program makes, and never a folder path from the page.
+  filename = path.basename(String(filename)).replace(/[<>:"/\\|?*\x00-\x1f]/g, '_');
+  const ext = path.extname(filename).slice(1).toLowerCase();
+  if (!SAVE_TYPES.includes(ext)) throw new Error('Δεν επιτρέπεται αρχείο .' + ext);
   const r = await dialog.showSaveDialog(win, { defaultPath: path.join(app.getPath('documents'), filename), filters: [{ name: ext.toUpperCase(), extensions: [ext] }] });
   if (r.canceled || !r.filePath) return { ok: false };
-  fs.writeFileSync(r.filePath, Buffer.from(bytes));
+  const out = path.extname(r.filePath).toLowerCase() === '.' + ext ? r.filePath : r.filePath + '.' + ext;
+  const tmp = out + '.tmp'; fs.writeFileSync(tmp, Buffer.from(bytes)); fs.renameSync(tmp, out); r.filePath = out;
   shell.showItemInFolder(r.filePath);
   return { ok: true, path: r.filePath };
 });
 // Wipe: replace the database with a brand-new, empty one (no seed).
-ipcMain.handle('db:reset', () => {
+handle('db:reset', () => {
   backupFile('πριν-τη-διαγραφή', stamp(), 5);
-  db.close();
+  // The new empty database replaces the old one only once it is on disk (a full disk leaves everything as it was).
+  const old = db;
   db = new SQL.Database();
-  createSchema();
-  db.run("INSERT OR REPLACE INTO meta (key, value) VALUES ('seeded', datetime('now'))");
-  db.run("INSERT OR REPLACE INTO meta (key, value) VALUES ('app_version', ?)", [app.getVersion()]);
-  persist();
+  try {
+    createSchema();
+    db.run("INSERT OR REPLACE INTO meta (key, value) VALUES ('seeded', datetime('now'))");
+    db.run("INSERT OR REPLACE INTO meta (key, value) VALUES ('app_version', ?)", [app.getVersion()]);
+    persist();
+  } catch (err) { try { db.close(); } catch {} db = old; throw new Error('Δεν γράφτηκε στον δίσκο (' + (err.code || err.message) + ')'); }
+  try { old.close(); } catch {}
   return true;
 });
 // Windows light/dark theme, for the "Σύμφωνα με το σύστημα" appearance option
-ipcMain.handle('theme:dark', () => nativeTheme.shouldUseDarkColors);
+handle('theme:dark', () => nativeTheme.shouldUseDarkColors);
 nativeTheme.on('updated', () => { for (const w of BrowserWindow.getAllWindows()) w.webContents.send('theme:changed', nativeTheme.shouldUseDarkColors); });
-ipcMain.handle('app:info', () => ({ version: app.getVersion(), dbPath }));
+handle('app:info', () => ({ version: app.getVersion(), dbPath }));
+
+// Αρχείο → Επαναφορά από αντίγραφο…: the newest copies with their date and size; the current data is kept as a copy first.
+async function restoreFromBackup() {
+  const win = BrowserWindow.getAllWindows()[0];
+  const dir = backupDir();
+  const files = fs.readdirSync(dir).filter(f => f.endsWith('.sqlite')).map(f => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs })).sort((a, b) => b.t - a.t);
+  const list = [];
+  for (const o of files) {
+    if (list.length >= 5) break;
+    const d = tryOpen(path.join(dir, o.f)); if (!d) continue;
+    let n = [0, 0]; try { n = d.exec('SELECT (SELECT count(*) FROM fields), (SELECT count(*) FROM entries)')[0].values[0]; } catch {}
+    d.close();
+    const kind = o.f.startsWith('ημερήσιο') ? 'ημερήσιο' : o.f.startsWith('πριν-τη-διαγραφή') ? 'πριν από διαγραφή' : o.f.startsWith('katastixo-before') ? 'πριν από ενημέρωση' : o.f.startsWith('πριν-την-επαναφορά') ? 'πριν από επαναφορά' : 'χειροκίνητο';
+    list.push({ ...o, label: `${new Date(o.t).toLocaleString('el-GR', { dateStyle: 'short', timeStyle: 'short' })} · ${n[0]} ${n[0] === 1 ? 'αγροτεμάχιο' : 'αγροτεμάχια'}, ${n[1]} ${n[1] === 1 ? 'καταχώριση' : 'καταχωρίσεις'} (${kind})` });
+  }
+  if (!list.length) return dialog.showMessageBox(win, { type: 'info', title: 'Αγρολόγιο', message: 'Δεν υπάρχει ακόμα αντίγραφο ασφαλείας.' });
+  const r = await dialog.showMessageBox(win, { type: 'question', title: 'Επαναφορά από αντίγραφο', buttons: [...list.map(o => o.label), 'Άκυρο'], cancelId: list.length, defaultId: list.length, noLink: false,
+    message: 'Ποιο αντίγραφο να ανοίξει;', detail: 'Τα σημερινά στοιχεία φυλάγονται πρώτα ως αντίγραφο «πριν από επαναφορά», οπότε μπορείς να γυρίσεις πίσω.' });
+  if (r.response >= list.length) return;
+  const pick = list[r.response];
+  const nd = tryOpen(path.join(dir, pick.f));
+  if (!nd) return dialog.showErrorBox('Αγρολόγιο', 'Το αντίγραφο δεν ανοίγει.');
+  backupFile('πριν-την-επαναφορά', stamp(), 5);
+  const old = db; db = nd;
+  try { createSchema(); persist(); } catch (err) { db = old; try { nd.close(); } catch {} return dialog.showErrorBox('Αγρολόγιο', 'Δεν έγινε η επαναφορά: ' + (err.code || err.message)); }
+  try { old.close(); } catch {}
+  log('restored from', pick.f);
+  for (const w of BrowserWindow.getAllWindows()) w.webContents.reload();
+}
+
+// Theme, text size and the other small page choices lived under file:// until 0.9.1; copy them once to the new app:// page.
+let moving = false;
+async function moveLocalChoices() {
+  const done = db.exec("SELECT value FROM meta WHERE key = 'ls_moved'")[0];
+  if (done || SMOKE) return;
+  moving = true;
+  try {
+    const w = new BrowserWindow({ show: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
+    await w.loadFile(path.join(APP_DIR, 'blank.html'));
+    const json = await w.webContents.executeJavaScript("JSON.stringify(Object.fromEntries(Object.entries(localStorage).filter(([k])=>k.startsWith('agrologio-'))))");
+    await w.loadURL(APP_ORIGIN + '/blank.html');
+    await w.webContents.executeJavaScript(`(o=>{for(const[k,v]of Object.entries(o))if(localStorage.getItem(k)===null)localStorage.setItem(k,v)})(${json})`);
+    w.destroy();
+  } catch (e) { log('move local choices', e && e.message || e); }
+  moving = false;
+  db.run("INSERT OR REPLACE INTO meta (key, value) VALUES ('ls_moved', datetime('now'))");
+  try { persist(); } catch {}
+}
 
 function lockDownSession() {
   // The program needs no camera, microphone, location or notifications.
@@ -254,13 +337,17 @@ function createWindow() {
     win.webContents.on('render-process-gone', (_e, d) => fail('renderer ' + d.reason));
     win.webContents.on('did-finish-load', async () => {
       try {
-        const ok = await win.webContents.executeJavaScript("new Promise(r=>setTimeout(()=>r(!!document.querySelector('nav')&&document.title.includes('Αγρολόγιο')),3000))");
-        if (!ok) return fail('page did not render');
+        // The page must render and its data must load from the database (a refused or broken database call fails the check).
+        const why = await win.webContents.executeJavaScript(`new Promise(r=>{const t0=Date.now();(function f(){const st=document.querySelector('#status')?.textContent||'',b=document.body.innerText;
+          if(/Σφάλμα/.test(st))return r('load error: '+st);
+          if(document.querySelector('nav')&&document.title.includes('Αγρολόγιο')&&!/Φορτώνω/.test(b))return r('');
+          if(Date.now()-t0>20000)return r('page did not load its data');setTimeout(f,250)})()})`);
+        if (why) return fail(why);
         console.log('smoke test ok', app.getVersion()); app.exit(0);
       } catch (e) { fail(e.message); }
     });
   }
-  win.loadFile(path.join(__dirname, 'app', 'index.html'));
+  win.loadURL(APP_ORIGIN + '/index.html');
 }
 
 // Automatic updates from GitHub Releases (Nikos-1/agrologio). Data in userData is never touched by an update.
@@ -310,16 +397,23 @@ function checkUpdatesNow() {
 
 Menu.setApplicationMenu(Menu.buildFromTemplate([
   { label: 'Αρχείο', submenu: [
+    { label: 'Επαναφορά από αντίγραφο…', click: () => restoreFromBackup() },
     { label: 'Άνοιγμα φακέλου δεδομένων', click: () => shell.showItemInFolder(dbPath) },
     { type: 'separator' }, { label: 'Έξοδος', role: 'quit' } ] },
   { label: 'Προβολή', submenu: [ { label: 'Ανανέωση', role: 'reload' }, { label: 'Μεγέθυνση', role: 'zoomIn' }, { label: 'Σμίκρυνση', role: 'zoomOut' }, { label: 'Κανονικό μέγεθος', role: 'resetZoom' }, { type: 'separator' }, { label: 'Πλήρης οθόνη', role: 'togglefullscreen' } ] },
   { label: 'Βοήθεια', submenu: [ { label: 'Έλεγχος για ενημερώσεις', click: checkUpdatesNow }, { type: 'separator' }, { label: 'Σχετικά', click: async () => { const r = await dialog.showMessageBox({ title: 'Αγρολόγιο', message: 'Αγρολόγιο ' + app.getVersion(), buttons: ['Εντάξει', 'Άνοιγμα φακέλου δεδομένων'], defaultId: 0, cancelId: 0, detail: 'Τα στοιχεία αποθηκεύονται τοπικά στο αρχείο:\n' + dbPath + '\n\nΤα αυτόματα αντίγραφα είναι στον φάκελο backups δίπλα του.' }); if (r.response === 1) shell.showItemInFolder(dbPath); } } ] }
 ]));
 
+// Any other web contents (should never exist) may not navigate or open windows either.
+app.on('web-contents-created', (_e, wc) => {
+  wc.on('will-navigate', (ev, url) => { if (!url.startsWith(APP_ORIGIN + '/')) ev.preventDefault(); });
+  wc.setWindowOpenHandler(() => ({ action: 'deny' }));
+});
+
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { const w = BrowserWindow.getAllWindows()[0]; if (w) { if (w.isMinimized()) w.restore(); w.focus(); } });
-  app.whenReady().then(openDb).then(ok => { if (ok) { lockDownSession(); createWindow(); if (!SMOKE) setupUpdates(); } }).catch(async err => {
+  app.whenReady().then(() => { serveApp(); return openDb(); }).then(async ok => { if (ok) { lockDownSession(); await moveLocalChoices(); createWindow(); if (!SMOKE) setupUpdates(); } }).catch(async err => {
     log('start failed', err && err.stack || err);
     if (SMOKE) { console.error('smoke test failed:', err && err.stack || err); return app.exit(3); }
     // A version that cannot start must still be able to replace itself with a newer one.
@@ -332,5 +426,5 @@ else {
     dialog.showErrorBox('Το Αγρολόγιο δεν μπόρεσε να ξεκινήσει', 'Δοκίμασε να το ανοίξεις ξανά. Αν συνεχίζει, στείλε αυτό το μήνυμα:\n\n' + String(err && err.message || err).slice(0, 300));
     app.quit();
   });
-  app.on('window-all-closed', () => app.quit());
+  app.on('window-all-closed', () => { if (!moving) app.quit(); });
 }

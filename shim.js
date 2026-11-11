@@ -16,7 +16,7 @@
     id, path: c + '/' + id,
     get: async () => { await load(); return snap(id, cache[c][id]); },
     set: d => queued(async () => { await load(); await N.set(c, id, d); cache[c][id] = JSON.parse(JSON.stringify(d)); fire(c, id); }),
-    update: d => queued(async () => { await load(); const m = { ...(cache[c][id] || {}), ...d }; await N.set(c, id, m); cache[c][id] = m; fire(c, id); }),
+    update: d => queued(async () => { await load(); const m = JSON.parse(JSON.stringify({ ...(cache[c][id] || {}), ...d })); await N.set(c, id, m); cache[c][id] = m; fire(c, id); }),
     delete: () => queued(async () => { await load(); await N.del(c, id); delete cache[c][id]; fire(c, id); }),
     onSnapshot: (next, error) => { const k = c + '/' + id; if (!docListeners.has(k)) docListeners.set(k, new Set()); docListeners.get(k).add(next); load().then(() => next(snap(id, cache[c][id])), err => error && error(err)); return () => docListeners.get(k).delete(next); }
   });

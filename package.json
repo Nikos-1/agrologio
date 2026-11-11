@@ -1,7 +1,7 @@
 {
   "name": "agrologio",
   "productName": "Αγρολόγιο",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Κόστος και έσοδα αγροτικών εργασιών ανά αγροτεμάχιο",
   "author": "Nick",
   "main": "main.js",
@@ -59,7 +59,8 @@
       "enableCookieEncryption": true,
       "enableNodeOptionsEnvironmentVariable": false,
       "enableNodeCliInspectArguments": false,
-      "onlyLoadAppFromAsar": true
+      "onlyLoadAppFromAsar": true,
+      "grantFileProtocolExtraPrivileges": false
     }
   },
   "dependencies": {
