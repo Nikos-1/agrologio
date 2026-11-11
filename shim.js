@@ -1,8 +1,9 @@
 // Gives the page the same window.claude.use('db' | 'downloads') API it has on claude.ai, backed by the local SQLite file.
 (function () {
   const N = window.katastixoNative;
-  let cache = null; const listeners = { fields: new Set(), entries: new Set(), settings: new Set() }; const docListeners = new Map();
-  const load = async () => { if (!cache) cache = await N.all(); return cache; };
+  let cache = null; const listeners = { fields: new Set(), entries: new Set(), settings: new Set(), photos: new Set() }; const docListeners = new Map();
+  // Photos are not loaded at start (they are big): each one is fetched when it is shown.
+  const load = async () => { if (!cache) { cache = await N.all(); cache.photos = cache.photos || {}; } return cache; };
   const snap = (id, d) => ({ id, exists: d !== undefined, data: () => (d === undefined ? undefined : JSON.parse(JSON.stringify(d))), metadata: { fromCache: false, hasPendingWrites: false } });
   const qsnap = c => { const docs = Object.entries(cache[c]).map(([id, d]) => snap(id, d)); return { docs, size: docs.length, empty: !docs.length, docChanges: () => [], metadata: {} }; };
   // A listener error (page render) must not look like a failed save.
@@ -14,9 +15,9 @@
   const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   const doc = (c, id) => ({
     id, path: c + '/' + id,
-    get: async () => { await load(); return snap(id, cache[c][id]); },
+    get: async () => { await load(); if (c === 'photos' && cache.photos[id] === undefined && N.get) { const d = await N.get(c, id); if (d) cache.photos[id] = d; } return snap(id, cache[c][id]); },
     set: d => queued(async () => { await load(); await N.set(c, id, d); cache[c][id] = JSON.parse(JSON.stringify(d)); fire(c, id); }),
-    update: d => queued(async () => { await load(); const m = { ...(cache[c][id] || {}), ...d }; await N.set(c, id, m); cache[c][id] = m; fire(c, id); }),
+    update: d => queued(async () => { await load(); const m = JSON.parse(JSON.stringify({ ...(cache[c][id] || {}), ...d })); await N.set(c, id, m); cache[c][id] = m; fire(c, id); }),
     delete: () => queued(async () => { await load(); await N.del(c, id); delete cache[c][id]; fire(c, id); }),
     onSnapshot: (next, error) => { const k = c + '/' + id; if (!docListeners.has(k)) docListeners.set(k, new Set()); docListeners.get(k).add(next); load().then(() => next(snap(id, cache[c][id])), err => error && error(err)); return () => docListeners.get(k).delete(next); }
   });
