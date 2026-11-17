@@ -1386,7 +1386,7 @@ async function wxCheck(){const box=$('#wxBox');if(!box)return;const f=S.fields.g
   const seq=++wxSeq;box.innerHTML='<span class="note">Φορτώνω τον καιρό…</span>';
   try{const w=await wxFor(pt);if(seq===wxSeq&&wxMode()===mode)box.innerHTML=wxHtml(w,f,mode)}catch{if(seq===wxSeq)box.innerHTML='<span class="note">Ο καιρός δεν φορτώθηκε. Χρειάζεται σύνδεση στο ίντερνετ.</span>'}}
 // Drawn icons, not emoji: some Windows fonts show weather emoji as empty boxes.
-let WXI_STYLE='color';
+const WXI_STYLE='color';
 function wxIcon(c){const col=WXI_STYLE==='color';const sunC=col?'#f0a92c':'currentColor',cloudF=col?'#b8c2cc':'none',cloudS=col?'#7d8a97':'currentColor',dropC=col?'#3b7fc4':'currentColor';
   const sun=(cx,cy,r)=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col?sunC:'none'}" stroke="${sunC}" stroke-width="1.8"/>`+[0,45,90,135,180,225,270,315].map(a=>{const t=a*Math.PI/180,x1=cx+Math.cos(t)*(r+2.2),y1=cy+Math.sin(t)*(r+2.2),x2=cx+Math.cos(t)*(r+4.6),y2=cy+Math.sin(t)*(r+4.6);return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${sunC}" stroke-width="1.8" stroke-linecap="round"/>`}).join('');
   const cloud=(dy=0)=>`<path d="M7.5 ${18+dy}h9.5a3.6 3.6 0 0 0 .4-7.2A5 5 0 0 0 7.8 9.6a4.2 4.2 0 0 0-.3 8.4z" fill="${cloudF}" stroke="${cloudS}" stroke-width="1.7" stroke-linejoin="round"/>`;
