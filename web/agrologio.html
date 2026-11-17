@@ -72,6 +72,7 @@ button.ghost{border-color:transparent;background:none;padding:6px 8px}
 button:disabled{opacity:.5;cursor:default}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 form{display:flex;flex-direction:column;gap:12px}
+#entryForm.nofield #workPart,#entryForm.nofield #incomePart,#entryForm.nofield #photoPart,#entryForm.nofield>label.f,#entryForm.nofield>.row{display:none}
 .fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
 label.f{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);font-weight:500;min-width:0}
 input,select,textarea{font:400 1rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--field-line);border-radius:8px;padding:9px 10px;width:100%;min-width:0}
@@ -230,6 +231,7 @@ html{scroll-padding-top:136px}@media (max-width:760px){html{scroll-padding-top:1
           <label class="f" id="eSeasonWrap">Χρονιά (συγκομιδή)<select id="eSeason"></select></label>
           <label class="f" id="eScopeWrap" hidden>Κατανομή σε<select id="eScope"><option value="all">Όλα τα αγροτεμάχια</option><option value="olive">Μόνο ελιές</option><option value="vine">Μόνο αμπέλια</option></select></label>
         </div>
+        <p class="note" id="noFieldNote" hidden>Διάλεξε πρώτα σε ποιο αγροτεμάχιο έγινε (ή «Όλο το κτήμα» για κοινό έξοδο), για να μη γραφτεί κατά λάθος σε άλλο.</p>
         <div id="workPart" class="stack">
           <div class="fields">
             <label class="f">Εργασία<select id="eTask"></select></label>
@@ -810,7 +812,7 @@ ${(()=>{const y=new Date().getFullYear(),lim=num(S.settings.dieselLimit?.[y]);if
 function renderFieldSelects(){
   const fs=fieldsSorted();
   const opts=fs.map(f=>`<option value="${f.id}">${esc(f.name)} (${CROPS[f.crop]?.name})</option>`).join('');
-  const ef=$('#eField'),v=ef.value;ef.innerHTML=fs.length?opts+`<option value="${FARM}">Όλο το κτήμα (κοινό έξοδο, π.χ. πετρέλαιο)</option>`:'<option value="">Πρόσθεσε πρώτα ένα αγροτεμάχιο</option>';if(v&&(S.fields.has(v)||(v===FARM&&fs.length)))ef.value=v;
+  const ef=$('#eField'),v=ef.value;ef.innerHTML=fs.length?'<option value="" disabled>Διάλεξε αγροτεμάχιο…</option>'+opts+`<option value="${FARM}">Όλο το κτήμα (κοινό έξοδο, π.χ. πετρέλαιο)</option>`:'<option value="">Πρόσθεσε πρώτα ένα αγροτεμάχιο</option>';if(v&&(S.fields.has(v)||(v===FARM&&fs.length)))ef.value=v;else ef.value='';
   const lf=$('#logField'),lv=lf.value;lf.innerHTML='<option value="">Όλα</option>'+opts;if(S.fields.has(lv))lf.value=lv;
   const seasons=allSeasons();const ls=$('#logSeason'),lsv=ls.value;ls.innerHTML='<option value="">Όλες</option>'+seasons.map(y=>`<option value="${y}">${seasonOpt(y)}</option>`).join('');if(seasons.includes(+lsv))ls.value=lsv;
   const rs=$('#repSeason'),rsv=rs.value;rs.innerHTML='<option value="closed">Τελευταία ολοκληρωμένη</option><option value="open">Τρέχουσα (σε εξέλιξη)</option><option value="">Όλες οι χρονιές</option>'+seasons.map(y=>`<option value="${y}">${seasonOpt(y)}</option>`).join('');if(rsv&&[...rs.options].some(o=>o.value===rsv))rs.value=rsv;else rs.value=[...S.fields.keys()].some(id=>lastClosed(id)!=null)?'closed':'open';
@@ -1198,7 +1200,8 @@ let seasonTouched=false;
 function autoSeason(fid){const d=$('#eDate').value||today(),t=$('#eTask').value;let y=seasonAtDate(fid,d);const lc=lastClosed(fid);
   if(lc!=null&&y===openSeason(fid)&&(kind==='income'||(kind==='work'&&MILL.has(t))))y=lc;return y}
 function syncEntryForm(resetSeason){
-  const fid=$('#eField').value;const farm=fid===FARM;
+  const fid=$('#eField').value;const farm=fid===FARM;const none=!farm&&!S.fields.has(fid);
+  $('#entryForm').classList.toggle('nofield',none);$('#noFieldNote').hidden=!none;if(none){$('#eSeasonWrap').hidden=true;$('#eScopeWrap').hidden=true;return}
   $('#eSeasonWrap').hidden=farm;$('#eScopeWrap').hidden=!farm;if(farm&&!editing)scopeOptions($('#eScope').value);$('#farmNote').hidden=!farm;$('#kindIncome').disabled=farm;
   if(farm){if(kind==='income'){kind='work';$('#kindWork').setAttribute('aria-pressed',true);$('#kindIncome').setAttribute('aria-pressed',false);$('#workPart').hidden=false;$('#incomePart').hidden=true}
     const tv=$('#eTask').value;const ft=['Αγορά πετρελαίου','Άλλο κοινό έξοδο'];$('#eTask').innerHTML=ft.map(t=>`<option>${t}</option>`).join('')+'<option value="__other">Άλλο…</option>';if(ft.includes(tv)||tv==='__other')$('#eTask').value=tv;syncTask();refreshLineCats();return}
@@ -1414,13 +1417,13 @@ function lineHtml(l={}){const cat=CAT[l.cat]||CATS[0];const isEur=cat.unit==='�
   <span class="amt"></span><button type="button" class="iconbtn del lx" aria-label="Αφαίρεση εξόδου" title="Αφαίρεση">${BIN}</button></div>`}
 function addLine(l){const w=document.createElement('div');w.innerHTML=lineHtml(l);const el=w.firstElementChild;$('#eLines').append(el);wireLine(el);calcLines()}
 function wireLine(el){el.querySelector('.lc').onchange=e=>{const c=CAT[e.target.value];const isEur=c.unit==='€';el.querySelector('.lqw').hidden=isEur;el.querySelector('.lpw').hidden=isEur;el.querySelector('.law').hidden=!isEur;el.querySelector('.lqw').firstChild.textContent=c.unit;
-    if(c.rate)el.querySelector('.lp').value=S.settings[c.rate]??'';calcLines()};
+    el.querySelector('.lq').value='';el.querySelector('.la').value='';el.querySelector('.lp').value=c.rate?(S.settings[c.rate]??''):'';calcLines()};
   el.querySelectorAll('input').forEach(i=>i.oninput=calcLines);el.querySelector('.lx').onclick=()=>{el.remove();calcLines()}}
 function readLines(){return [...$('#eLines').children].map(el=>{const cat=el.querySelector('.lc').value;const isEur=CAT[cat].unit==='€';
   if(isEur)return {cat,amount:num(el.querySelector('.la').value)};const qty=num(el.querySelector('.lq').value),price=num(el.querySelector('.lp').value);return {cat,qty,price,amount:Math.round(qty*price*100)/100}}).filter(l=>l.amount>0)}
 function calcLines(){let t=0;[...$('#eLines').children].forEach(el=>{const cat=el.querySelector('.lc').value;const a=CAT[cat].unit==='€'?num(el.querySelector('.la').value):num(el.querySelector('.lq').value)*num(el.querySelector('.lp').value);t+=a;el.querySelector('.amt').textContent=a?eur2.format(a):''});$('#eTotal').textContent=eur2.format(t);if(!$('#mfBox').hidden)mfHint()}
 function resetEntry(fid,keepDate){editing=null;seasonTouched=false;incomeLead='amount';$('#entryTitle').textContent='Νέα καταχώριση';$('#eCancel').hidden=true;$('#eDelete').hidden=true;$('#eDelete').textContent='Διαγραφή';delete $('#eDelete').dataset.sure;
-  $('#entryForm').reset();photosLoad([]);$('#eDate').value=keepDate||today();if(fid&&(S.fields.has(fid)||fid===FARM))$('#eField').value=fid;$('#eLines').innerHTML='';$('#eProds').innerHTML='';$('#eTask').innerHTML='';fillLists();syncEntryForm(true);addLine(defaultLine());setKind('work')}
+  $('#entryForm').reset();photosLoad([]);$('#eDate').value=keepDate||today();$('#eField').value=fid&&(S.fields.has(fid)||fid===FARM)?fid:'';$('#eLines').innerHTML='';$('#eProds').innerHTML='';$('#eTask').innerHTML='';fillLists();syncEntryForm(true);addLine(defaultLine());setKind('work')}
 function newEntry(fid){resetEntry(fid);go('entry')}
 function editEntry(id){let e=S.entries.get(id);if(!e)return;if(e.task==='Μεταφορά στο ελαιοτριβείο')e={...e,task:'Μεταφορά στο ελαιουργείο'};editing={id,...e};seasonTouched=true;
   $('#entryTitle').textContent='Αλλαγή καταχώρισης';$('#eCancel').hidden=false;$('#eDelete').hidden=false;
@@ -1488,14 +1491,14 @@ async function saveEntry(ev){ev.preventDefault();if(!db)return;const fid=$('#eFi
       const ops=mfShares(ids).map((x,i)=>({c:'entries',id:null,data:{...d,...(x.id===fid||!d.photos?{}:{photos:[]}),fieldId:x.id,season:x.id===fid?d.season:seasonAtDate(x.id,d.date),...(d.harvestDone?{fieldStr:num(S.fields.get(x.id)?.stremmata)}:{}),lines:d.lines.map(l=>scale(l,split?x.share:1)),group,createdAt:Date.now()+i}}));
       // Rounding: the cents left over go to the first field, so the parts add up to what was written.
       if(split)d.lines.forEach((l,j)=>{const sum=ops.reduce((a,o)=>a+o.data.lines[j].amount,0);ops[0].data.lines[j].amount=Math.round((ops[0].data.lines[j].amount+l.amount-sum)*100)/100});
-      await writeMany(ops);toast(`Καταχωρίστηκε σε ${ids.length} αγροτεμάχια`);resetEntry(fid,d.date);renderEntrySummary()}
+      await writeMany(ops);toast(`Καταχωρίστηκε σε ${ids.length} αγροτεμάχια`);resetEntry(null,d.date);renderEntrySummary()}
     catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code))}finally{$('#eSave').disabled=false}
     return}
   $('#eSave').disabled=true;
   try{if(editing){await db.doc('entries/'+editing.id).set({...d,createdAt:editing.createdAt||Date.now()});lastSaved=editing.id;for(const pid of dropPh)db.doc('photos/'+pid).delete().catch(()=>{})}else{const ref=await db.collection('entries').add({...d,createdAt:Date.now()});lastSaved=ref?.id}
     // After a change, back to the Ημερολόγιο where it came from; after a new entry, the next one keeps the same date (handy for old papers).
     if(editing){toast('Η αλλαγή αποθηκεύτηκε');resetEntry(fid);go('log');renderLog()}
-    else{toast('Καταχωρίστηκε');resetEntry(fid,d.date);renderEntrySummary();$('#entrySummary').scrollIntoView({behavior:'smooth',block:'start'})}}
+    else{toast('Καταχωρίστηκε');resetEntry(null,d.date);renderEntrySummary();$('#entrySummary').scrollIntoView({behavior:'smooth',block:'start'})}}
   catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code))}finally{$('#eSave').disabled=false}}
 // Reopening a closed harvest moves that year's shared costs (e.g. Diesel) into the open year of the field.
 function reopenWarn(e){const f=S.fields.get(e.fieldId);return `Η χρονιά ${seasonName(e.season,f?.crop)} του «${f?.name||''}» θα ξανανοίξει.\n\nΤα κοινά έξοδα (π.χ. πετρέλαιο) που είχαν μοιραστεί σε αυτήν θα πάνε στην ανοιχτή χρονιά και θα αλλάξει το καθαρό της. Να συνεχίσω;`}
@@ -1606,7 +1609,7 @@ function go(t){tab=t;
   document.querySelectorAll('#tabs button').forEach(b=>{if(b.dataset.tab===t)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
   document.querySelectorAll('main section[id^="tab-"]').forEach(s=>s.hidden=s.id!=='tab-'+t);if(tabDirty.has(t))renderTab(t);window.scrollTo({top:0});
   if(t==='fields'&&lmap)requestAnimationFrame(()=>{lmap.invalidateSize();if(lmapLayer.getLayers().length)lmap.fitBounds(lmapLayer.getBounds(),{padding:[50,50],maxZoom:17,animate:false})})}
-$('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.tab==='entry'&&!editing)resetEntry($('#eField').value);go(b.dataset.tab)};
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.tab==='entry'&&!editing)resetEntry();go(b.dataset.tab)};
 $('#mfOn').onchange=()=>{$('#mfBox').hidden=!$('#mfOn').checked;mfHint()};$('#mfList').onchange=mfHint;$('#mfMode').onchange=mfHint;
 $('#kindWork').onclick=()=>setKind('work');$('#kindIncome').onclick=()=>setKind('income');
 $('#eField').onchange=()=>{seasonTouched=false;if(!editing){$('#eLines').innerHTML='';syncEntryForm(true);addLine(defaultLine())}else syncEntryForm(true)};$('#eDate').onchange=()=>{if(!editing)syncEntryForm(true)};
