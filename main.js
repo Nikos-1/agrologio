@@ -74,8 +74,10 @@ function cloudSave(c) { try { fs.writeFileSync(cloudCfgPath(), JSON.stringify(c)
 function oneDriveDir() { for (const k of ['OneDrive', 'OneDriveConsumer', 'OneDriveCommercial']) { const d = process.env[k]; try { if (d && fs.statSync(d).isDirectory()) return d; } catch {} } return null; }
 function cloudDir(c = cloudCfg()) { if (c.dir) return c.dir; const o = oneDriveDir(); return o ? path.join(o, 'Αγρολόγιο') : null; }
 const CLOUD_PREFIX = 'Αγρολόγιο-';
+// On by default when OneDrive is there; the user can turn it off in Ρυθμίσεις.
+const cloudOn = c => c.on ?? !!oneDriveDir();
 function cloudCopy() {
-  const c = cloudCfg(); if (!c.on || SMOKE) return;
+  const c = cloudCfg(); if (!cloudOn(c) || SMOKE) return;
   const dir = cloudDir(c); if (!dir || !fs.existsSync(dbPath) || fs.statSync(dbPath).size === 0) return;
   try {
     fs.mkdirSync(dir, { recursive: true });
@@ -87,7 +89,7 @@ function cloudCopy() {
   } catch (e) { c.err = e.code || e.message; log('cloud copy', c.err); }
   cloudSave(c);
 }
-const cloudInfo = () => { const c = cloudCfg(); return { dir: cloudDir(c), on: !!c.on, last: c.last || null, err: c.err || null }; };
+const cloudInfo = () => { const c = cloudCfg(); return { dir: cloudDir(c), on: cloudOn(c), last: c.last || null, err: c.err || null }; };
 
 // Open a database file; null if it is empty or not a valid SQLite database.
 function tryOpen(file) {
