@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld('katastixoNative', {
   backup: prefix => invoke('db:backup', prefix),
   saveFile: (filename, bytes) => invoke('file:save', filename, bytes),
   reset: () => invoke('db:reset'),
+  cloudGet: () => invoke('cloud:get'),
+  cloudSet: on => invoke('cloud:set', !!on),
+  cloudPick: () => invoke('cloud:pick'),
   info: () => invoke('app:info'),
   systemDark: () => invoke('theme:dark'),
   onSystemTheme: cb => ipcRenderer.on('theme:changed', (_e, dark) => cb(dark))

@@ -38,7 +38,7 @@ html = html.replace(/<script>([\s\S]*?)<\/script>/g, (_, js) => { const f = `lib
 if (/ on[a-z]+="/.test(html)) throw new Error('inline event handler left in page');
 if (/https:\/\/(cdn|fonts)/.test(html.replace(/https:\/\/(www\.google\.com|earth\.google\.com)/g, ''))) throw new Error('external resource left in page');
 const head = `<!doctype html><html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https://server.arcgisonline.com https://services.arcgisonline.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self' https://api.open-meteo.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https://server.arcgisonline.com https://services.arcgisonline.com">
 <style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <link rel="stylesheet" href="lib/fonts.css"><link rel="stylesheet" href="lib/leaflet.css"><script src="lib/shim.js"></script><script src="lib/leaflet.js"></script></head><body>`;
 fs.writeFileSync(path.join(out, 'index.html'), head + html + '</body></html>');

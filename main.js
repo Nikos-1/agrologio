@@ -66,6 +66,31 @@ function backupFile(prefix, name, keep) {
   for (const o of mine.slice(keep)) fs.rmSync(path.join(dir, o.f), { force: true });
 }
 
+// A daily copy in the user's OneDrive (or another folder they pick), so a broken computer does not take the data with it.
+// Settings live in userData/cloud.json, outside the database, so a restore never changes them.
+const cloudCfgPath = () => path.join(app.getPath('userData'), 'cloud.json');
+function cloudCfg() { try { const c = JSON.parse(fs.readFileSync(cloudCfgPath(), 'utf8')); return c && typeof c === 'object' ? c : {}; } catch { return {}; } }
+function cloudSave(c) { try { fs.writeFileSync(cloudCfgPath(), JSON.stringify(c)); } catch (e) { log('cloud cfg', e.code || e.message); } }
+function oneDriveDir() { for (const k of ['OneDrive', 'OneDriveConsumer', 'OneDriveCommercial']) { const d = process.env[k]; try { if (d && fs.statSync(d).isDirectory()) return d; } catch {} } return null; }
+function cloudDir(c = cloudCfg()) { if (c.dir) return c.dir; const o = oneDriveDir(); return o ? path.join(o, 'Αγρολόγιο') : null; }
+const CLOUD_PREFIX = 'Αγρολόγιο-';
+// On by default when OneDrive is there; the user can turn it off in Ρυθμίσεις.
+const cloudOn = c => c.on ?? !!oneDriveDir();
+function cloudCopy() {
+  const c = cloudCfg(); if (!cloudOn(c) || SMOKE) return;
+  const dir = cloudDir(c); if (!dir || !fs.existsSync(dbPath) || fs.statSync(dbPath).size === 0) return;
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const dest = path.join(dir, `${CLOUD_PREFIX}${stamp().slice(0, 10)}.sqlite`), tmp = dest + '.tmp';
+    fs.copyFileSync(dbPath, tmp); fs.renameSync(tmp, dest);
+    const mine = fs.readdirSync(dir).filter(f => f.startsWith(CLOUD_PREFIX) && f.endsWith('.sqlite')).map(f => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs })).sort((a, b) => b.t - a.t);
+    for (const o of mine.slice(14)) fs.rmSync(path.join(dir, o.f), { force: true });
+    c.last = new Date().toISOString(); delete c.err;
+  } catch (e) { c.err = e.code || e.message; log('cloud copy', c.err); }
+  cloudSave(c);
+}
+const cloudInfo = () => { const c = cloudCfg(); return { dir: cloudDir(c), on: cloudOn(c), last: c.last || null, err: c.err || null }; };
+
 // Open a database file; null if it is empty or not a valid SQLite database.
 function tryOpen(file) {
   try {
@@ -120,9 +145,9 @@ async function openDb() {
   persist();
   // An empty database is never copied over a daily backup (it would push a good copy out).
   const hasData = db.exec('SELECT (SELECT count(*) FROM fields) + (SELECT count(*) FROM entries)')[0].values[0][0] > 0;
-  if (hasData) try { backupFile('ημερήσιο', stamp().slice(0, 10), 7); } catch {}
+  if (hasData) { try { backupFile('ημερήσιο', stamp().slice(0, 10), 7); } catch {} cloudCopy(); }
   // The program may stay open for days: refresh the day's copy every hour and on exit too.
-  const daily = () => { try { const n = db.exec('SELECT (SELECT count(*) FROM fields) + (SELECT count(*) FROM entries)')[0].values[0][0]; if (n > 0) backupFile('ημερήσιο', stamp().slice(0, 10), 7); } catch (e) { log('daily backup', e.code || e.message); } };
+  const daily = () => { try { const n = db.exec('SELECT (SELECT count(*) FROM fields) + (SELECT count(*) FROM entries)')[0].values[0][0]; if (n > 0) { backupFile('ημερήσιο', stamp().slice(0, 10), 7); cloudCopy(); } } catch (e) { log('daily backup', e.code || e.message); } };
   if (!SMOKE) { setInterval(daily, 60 * 60 * 1000).unref?.(); app.on('before-quit', daily); }
   return true;
 }
@@ -257,6 +282,13 @@ handle('db:reset', () => {
 handle('theme:dark', () => nativeTheme.shouldUseDarkColors);
 nativeTheme.on('updated', () => { for (const w of BrowserWindow.getAllWindows()) w.webContents.send('theme:changed', nativeTheme.shouldUseDarkColors); });
 handle('app:info', () => ({ version: app.getVersion(), dbPath }));
+handle('cloud:get', () => cloudInfo());
+handle('cloud:set', (_e, on) => { const c = cloudCfg(); c.on = !!on; cloudSave(c); if (on) cloudCopy(); return cloudInfo(); });
+handle('cloud:pick', async e => {
+  const r = await dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender), { title: 'Φάκελος για το αντίγραφο', properties: ['openDirectory', 'createDirectory'], defaultPath: cloudDir() || app.getPath('documents') });
+  if (!r.canceled && r.filePaths[0]) { const c = cloudCfg(); c.dir = r.filePaths[0]; c.on = true; cloudSave(c); cloudCopy(); }
+  return cloudInfo();
+});
 
 // Αρχείο → Επαναφορά από αντίγραφο…: the newest copies with their date and size; the current data is kept as a copy first.
 async function restoreFromBackup() {
@@ -272,12 +304,18 @@ async function restoreFromBackup() {
     const kind = o.f.startsWith('ημερήσιο') ? 'ημερήσιο' : o.f.startsWith('πριν-τη-διαγραφή') ? 'πριν από διαγραφή' : o.f.startsWith('katastixo-before') ? 'πριν από ενημέρωση' : o.f.startsWith('πριν-την-επαναφορά') ? 'πριν από επαναφορά' : 'χειροκίνητο';
     list.push({ ...o, label: `${new Date(o.t).toLocaleString('el-GR', { dateStyle: 'short', timeStyle: 'short' })} · ${n[0]} ${n[0] === 1 ? 'αγροτεμάχιο' : 'αγροτεμάχια'}, ${n[1]} ${n[1] === 1 ? 'καταχώριση' : 'καταχωρίσεις'} (${kind})` });
   }
-  if (!list.length) return dialog.showMessageBox(win, { type: 'info', title: 'Αγρολόγιο', message: 'Δεν υπάρχει ακόμα αντίγραφο ασφαλείας.' });
-  const r = await dialog.showMessageBox(win, { type: 'question', title: 'Επαναφορά από αντίγραφο', buttons: [...list.map(o => o.label), 'Άκυρο'], cancelId: list.length, defaultId: list.length, noLink: false,
-    message: 'Ποιο αντίγραφο να ανοίξει;', detail: 'Τα σημερινά στοιχεία φυλάγονται πρώτα ως αντίγραφο «πριν από επαναφορά», οπότε μπορείς να γυρίσεις πίσω.' });
-  if (r.response >= list.length) return;
-  const pick = list[r.response];
-  const nd = tryOpen(path.join(dir, pick.f));
+  // «Άλλο αρχείο…» opens any copy, e.g. the OneDrive one on a new computer.
+  const r = await dialog.showMessageBox(win, { type: 'question', title: 'Επαναφορά από αντίγραφο', buttons: [...list.map(o => o.label), 'Άλλο αρχείο…', 'Άκυρο'], cancelId: list.length + 1, defaultId: list.length + 1, noLink: false,
+    message: list.length ? 'Ποιο αντίγραφο να ανοίξει;' : 'Δεν υπάρχει ακόμα αντίγραφο σε αυτόν τον υπολογιστή.', detail: 'Τα σημερινά στοιχεία φυλάγονται πρώτα ως αντίγραφο «πριν από επαναφορά», οπότε μπορείς να γυρίσεις πίσω.' });
+  if (r.response > list.length) return;
+  let file;
+  if (r.response === list.length) {
+    const o = await dialog.showOpenDialog(win, { title: 'Αντίγραφο Αγρολογίου', defaultPath: cloudDir() || app.getPath('documents'), filters: [{ name: 'Αντίγραφο Αγρολογίου', extensions: ['sqlite'] }], properties: ['openFile'] });
+    if (o.canceled || !o.filePaths[0]) return;
+    file = o.filePaths[0];
+  } else file = path.join(dir, list[r.response].f);
+  const pick = { f: path.basename(file) };
+  const nd = tryOpen(file);
   if (!nd) return dialog.showErrorBox('Αγρολόγιο', 'Το αντίγραφο δεν ανοίγει.');
   backupFile('πριν-την-επαναφορά', stamp(), 5);
   const old = db; db = nd;
