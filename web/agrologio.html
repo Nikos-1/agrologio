@@ -112,7 +112,7 @@ svg.cmp{width:100%;height:auto;display:block;margin:6px 0}svg.cmp .cbase{stroke:
 #eSave{white-space:normal;text-align:left;max-width:100%}
 .debtgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}.debtgrid>div{display:flex;flex-direction:column;gap:2px}.debtgrid .rem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px}.debtgrid .rem .when{min-width:0}.debtgrid .rem>button{grid-column:2/4;justify-self:end}
 .cmpy{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:7px 0;border-top:1px solid var(--line)}.cmpy .note{grid-column:1/-1}.debtgrid .rem .num{white-space:nowrap;font-weight:600}
-.wx{padding:10px 12px;border-radius:8px;background:var(--sunk);display:flex;flex-direction:column;gap:4px}.wx .wxw{color:var(--bad);font-weight:600}.wx .wxok{color:var(--good,inherit);font-weight:600}.wxdays{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:4px 0}.wxd{background:var(--surface);border-radius:8px;padding:7px 8px;display:flex;flex-direction:column;gap:1px;font-size:.88rem}.wxd .wxi{font-size:1.3rem;line-height:1.2}.wxd.wet{outline:2px solid color-mix(in srgb,var(--bad) 45%,transparent)}
+.wx{display:flex;flex-direction:column;gap:6px}.wx .wxw{display:flex;gap:6px;align-items:flex-start}.wx .wxw svg{flex:none;margin-top:2px}.wx .wxw{color:var(--bad);font-weight:600}.wx .wxok{color:var(--good,inherit);font-weight:600}.wxdays{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:4px 0}.wxd{background:var(--sunk);border-radius:8px;padding:8px 9px;display:flex;flex-direction:column;gap:1px;font-size:.88rem}.wxd .wxi{display:block;height:34px}.wxd .wxi svg{width:34px;height:34px}.wxd .wxt{font-size:1.05rem;font-weight:600}.wxd.wet{outline:2px solid color-mix(in srgb,var(--bad) 45%,transparent)}
 .cmpt{font-size:.82rem;margin-top:6px}.cmpt th,.cmpt td{padding:5px 5px;white-space:nowrap}.cmpt td:first-child{min-width:0;white-space:normal}.mcacts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .chip.unpaid{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
 .line .amt,.linetotal .num{font-variant-numeric:tabular-nums;font-weight:600;padding:9px 2px;text-align:right;white-space:nowrap}
@@ -186,7 +186,7 @@ button.solid-danger{background:var(--bad);border-color:var(--bad);color:var(--su
 .bar span{display:block;height:100%}
 .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.78rem;color:var(--muted)}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
-@media (min-width:1100px){#tab-entry.entrylayout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start;gap:18px}#tab-entry.entrylayout[hidden]{display:none!important}#entrySummary .grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}}
+@media (min-width:1100px){#tab-entry.entrylayout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start;gap:18px}#tab-entry.entrylayout[hidden]{display:none!important}#tab-entry #entrySummary{grid-column:1/-1}#entrySummary .grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}}
 .home-tiles{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 @media (prefers-reduced-motion:no-preference){.card,.item{transition:background .15s}}
 #millPart input[readonly]{background:transparent;border-style:dashed;font-weight:600}
@@ -255,7 +255,6 @@ html{scroll-padding-top:136px}@media (max-width:760px){html{scroll-padding-top:1
             </div>
             <p class="note">Βάλε και φωτογραφίες της ζημιάς πιο κάτω. Όταν έρθει η αποζημίωση, γράψ' την ως έσοδο «Αποζημίωση ΕΛΓΑ» με τον ίδιο αριθμό δήλωσης και θα φαίνονται μαζί στις Αναφορές.</p>
           </div>
-          <div id="wxBox" class="wx" hidden aria-live="polite"></div>
           <p class="note" id="farmNote" hidden>Κοινό έξοδο για όλο το κτήμα. Μοιράζεται αυτόματα στα αγροτεμάχια που υπήρχαν εκείνη την ημερομηνία, ανάλογα με τα στρέμματα (όχι στα χωράφια χωρίς καλλιέργεια), και μπαίνει στη χρονιά που τρέχει σε κάθε αγροτεμάχιο εκείνη την ημερομηνία.</p>
           <div id="multiPart" class="stack" style="gap:8px" hidden>
             <label class="check"><input type="checkbox" id="mfOn"> Η ίδια εργασία έγινε και σε άλλα αγροτεμάχια</label>
@@ -334,9 +333,12 @@ html{scroll-padding-top:136px}@media (max-width:760px){html{scroll-padding-top:1
         </div>
       </form>
     </div>
-    <div id="stockCard" class="card"></div>
-    <div id="workerCard" class="card"></div>
-    <div id="machCard" class="card"></div>
+    <div id="entrySide" class="stack">
+      <div id="wxBox" class="card wx" hidden aria-live="polite"></div>
+      <div id="stockCard" class="card"></div>
+      <div id="machCard" class="card"></div>
+      <div id="workerCard" class="card"></div>
+    </div>
     <div id="entrySummary" class="stack"></div>
   </section>
 
@@ -1243,7 +1245,7 @@ function autoSeason(fid){const d=$('#eDate').value||today(),t=$('#eTask').value;
   if(lc!=null&&y===openSeason(fid)&&(kind==='income'||(kind==='work'&&MILL.has(t))))y=lc;return y}
 function syncEntryForm(resetSeason){
   const fid=$('#eField').value;const farm=fid===FARM;const none=!farm&&!S.fields.has(fid);
-  $('#entryForm').classList.toggle('nofield',none);$('#noFieldNote').hidden=!none;if(none){saveLabel();$('#eSeasonWrap').hidden=true;$('#eScopeWrap').hidden=true;return}
+  $('#entryForm').classList.toggle('nofield',none);$('#noFieldNote').hidden=!none;if(none){saveLabel();wxCheck();$('#eSeasonWrap').hidden=true;$('#eScopeWrap').hidden=true;return}
   $('#eSeasonWrap').hidden=farm;$('#eScopeWrap').hidden=!farm;if(farm&&!editing)scopeOptions($('#eScope').value);$('#farmNote').hidden=!farm;$('#kindIncome').disabled=farm;
   if(farm){if(kind==='income'){kind='work';$('#kindWork').setAttribute('aria-pressed',true);$('#kindIncome').setAttribute('aria-pressed',false);$('#workPart').hidden=false;$('#incomePart').hidden=true}
     const tv=$('#eTask').value;const ft=['Αγορά πετρελαίου','Άλλο κοινό έξοδο'];$('#eTask').innerHTML=ft.map(t=>`<option>${t}</option>`).join('')+'<option value="__other">Άλλο…</option>';if(ft.includes(tv)||tv==='__other')$('#eTask').value=tv;syncTask();refreshLineCats();return}
@@ -1377,18 +1379,30 @@ const WX=new Map();let wxSeq=0;
 function wxFor(pt){const k=pt[1].toFixed(2)+','+pt[0].toFixed(2),c=WX.get(k);if(c&&Date.now()-c.t<30*60e3)return c.p;
   const pr=fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pt[1].toFixed(3)}&longitude=${pt[0].toFixed(3)}&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&wind_speed_unit=kmh&forecast_days=4&timezone=auto`).then(r=>r.ok?r.json():Promise.reject(new Error(r.status)));
   WX.set(k,{t:Date.now(),p:pr});pr.catch(()=>WX.delete(k));return pr}
-const wxMode=()=>{const t=$('#eTask').value;return kind!=='work'||$('#eField').value===FARM?null:HARVEST.has(t)&&t!=='Κλείσιμο χρονιάς'?'harvest':isSprayTask(t==='__other'?$('#eTaskOther').value:t)?'spray':null};
+const wxMode=()=>{const t=$('#eTask').value;return kind!=='work'||!S.fields.has($('#eField').value)?null:HARVEST.has(t)&&t!=='Κλείσιμο χρονιάς'?'harvest':isSprayTask(t==='__other'?$('#eTaskOther').value:t)?'spray':'general'};
 async function wxCheck(){const box=$('#wxBox');if(!box)return;const f=S.fields.get($('#eField').value),mode=wxMode();
   if(!mode||!f||($('#eDate').value||today())<today()){box.hidden=true;return}
-  const pt=fieldPoint(f);box.hidden=false;if(!pt){box.innerHTML=`<span class="note">Βάλε τη θέση του αγροτεμαχίου (Αγροτεμάχια → Αλλαγή) για να βλέπεις τον καιρό πριν ${mode==='spray'?'τον ψεκασμό':'τη συγκομιδή'}.</span>`;return}
+  const pt=fieldPoint(f);box.hidden=false;if(!pt){box.innerHTML=`<span class="note">Βάλε τη θέση του αγροτεμαχίου (Αγροτεμάχια → Αλλαγή) για να βλέπεις τον καιρό πριν ${mode==='spray'?'τον ψεκασμό':mode==='harvest'?'τη συγκομιδή':'τις εργασίες'}.</span>`;return}
   const seq=++wxSeq;box.innerHTML='<span class="note">Φορτώνω τον καιρό…</span>';
   try{const w=await wxFor(pt);if(seq===wxSeq&&wxMode()===mode)box.innerHTML=wxHtml(w,f,mode)}catch{if(seq===wxSeq)box.innerHTML='<span class="note">Ο καιρός δεν φορτώθηκε. Χρειάζεται σύνδεση στο ίντερνετ.</span>'}}
-const wxIcon=c=>c<=1?'☀️':c<=3?'⛅':c<=48?'🌫️':c>=95?'⛈️':(c>=71&&c<=77)||c===85||c===86?'🌨️':'🌧️';
+// Drawn icons, not emoji: some Windows fonts show weather emoji as empty boxes.
+let WXI_STYLE='color';
+function wxIcon(c){const col=WXI_STYLE==='color';const sunC=col?'#f0a92c':'currentColor',cloudF=col?'#b8c2cc':'none',cloudS=col?'#7d8a97':'currentColor',dropC=col?'#3b7fc4':'currentColor';
+  const sun=(cx,cy,r)=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col?sunC:'none'}" stroke="${sunC}" stroke-width="1.8"/>`+[0,45,90,135,180,225,270,315].map(a=>{const t=a*Math.PI/180,x1=cx+Math.cos(t)*(r+2.2),y1=cy+Math.sin(t)*(r+2.2),x2=cx+Math.cos(t)*(r+4.6),y2=cy+Math.sin(t)*(r+4.6);return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${sunC}" stroke-width="1.8" stroke-linecap="round"/>`}).join('');
+  const cloud=(dy=0)=>`<path d="M7.5 ${18+dy}h9.5a3.6 3.6 0 0 0 .4-7.2A5 5 0 0 0 7.8 9.6a4.2 4.2 0 0 0-.3 8.4z" fill="${cloudF}" stroke="${cloudS}" stroke-width="1.7" stroke-linejoin="round"/>`;
+  const svg=b=>`<svg viewBox="0 0 24 24" aria-hidden="true">${b}</svg>`;
+  if(c<=1)return svg(sun(12,12,4.2));
+  if(c<=3)return svg(sun(8.5,8,3)+cloud(1.5));
+  if(c<=48)return svg([9,13,17].map((y,i)=>`<line x1="${4+i}" y1="${y}" x2="${20-i}" y2="${y}" stroke="${cloudS}" stroke-width="1.8" stroke-linecap="round"/>`).join(''));
+  if(c>=95)return svg(cloud(-3)+`<path d="M12.5 15.5l-2.2 3.6h2.6l-1.6 3.4" fill="none" stroke="${sunC}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`);
+  if((c>=71&&c<=77)||c===85||c===86)return svg(cloud(-3)+[8,12,16].map(x=>`<circle cx="${x}" cy="19.5" r="1.2" fill="${dropC}"/>`).join(''));
+  return svg(cloud(-3)+[8.5,12.5,16.5].map(x=>`<line x1="${x}" y1="17.5" x2="${x-1.3}" y2="21" stroke="${dropC}" stroke-width="1.8" stroke-linecap="round"/>`).join(''))}
+const WARN_SVG='<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M12 3.5 2.8 19.5h18.4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.9" r="1.1" fill="currentColor"/></svg>';
 // Today and the next two days, one box each.
 function wxDays(w){const d=w.daily;if(!d?.time)return '';const td=today();const days=d.time.map((t,i)=>({t,i})).filter(x=>x.t>=td).slice(0,3);
   const name=t=>t===td?'Σήμερα':t===addDays(td,1)?'Αύριο':new Date(t+'T12:00:00').toLocaleDateString('el-GR',{weekday:'long'});
   return `<div class="wxdays">${days.map(({t,i})=>{const mm=num(d.precipitation_sum[i]),pp=num(d.precipitation_probability_max[i]),wet=mm>=1||pp>=60;
-    return `<div class="wxd${wet?' wet':''}"><b>${name(t)}</b><span class="wxi" aria-hidden="true">${wxIcon(num(d.weather_code[i]))}</span><span>${Math.round(num(d.temperature_2m_min[i]))}° / ${Math.round(num(d.temperature_2m_max[i]))}°</span><span class="note">βροχή ${mm>=0.1?`${nf.format(Math.round(mm*10)/10)} mm · `:''}${nf.format(pp)}%</span><span class="note">αέρας ${Math.round(num(d.wind_speed_10m_max[i]))} km/h</span></div>`}).join('')}</div>`}
+    return `<div class="wxd${wet?' wet':''}"><b>${name(t)}</b><span class="wxi" aria-hidden="true">${wxIcon(num(d.weather_code[i]))}</span><span class="wxt">${Math.round(num(d.temperature_2m_min[i]))}° / ${Math.round(num(d.temperature_2m_max[i]))}°</span><span class="note">βροχή ${mm>=0.1?`${nf.format(Math.round(mm*10)/10)} mm · `:''}${nf.format(pp)}%</span><span class="note">αέρας ${Math.round(num(d.wind_speed_10m_max[i]))} km/h</span></div>`}).join('')}</div>`}
 function wxHtml(w,f,mode){const h=w.hourly,now=new Date(),td=localIso(now);const key=td+'T'+String(now.getHours()).padStart(2,'0')+':00';let i0=h.time.indexOf(key);if(i0<0)i0=0;
   const rng=n=>[...Array(n).keys()].map(k=>i0+k).filter(i=>i<h.time.length),n6=rng(6),n24=rng(24);
   const wet=i=>num(h.precipitation[i])>=0.2||num(h.precipitation_probability[i])>=60;
@@ -1397,11 +1411,12 @@ function wxHtml(w,f,mode){const h=w.hourly,now=new Date(),td=localIso(now);const
   const when=i=>{const d=h.time[i].slice(0,10);return (d===td?'σήμερα':d===addDays(td,1)?'αύριο':fmtDate(d))+' '+h.time[i].slice(11,16)};
   const inH=i=>{const k=i-i0;return k?`σε περίπου ${k} ${k===1?'ώρα':'ώρες'}`:'τώρα'};
   const foot=`${wxDays(w)}<div class="note">Πρόγνωση από open-meteo.com</div>`;
+  if(mode==='general')return `<h2>Καιρός στο «${esc(f.name)}»</h2>${rain24!=null?`<div class="wxw">${WARN_SVG}<span>Βροχή πιθανή ${when(rain24)} (${nf.format(num(h.precipitation_probability[rain24]))}%).</span></div>`:''}${foot}`;
   if(mode==='harvest'){const olive=f.crop==='olive',vine=f.crop==='vine',warn=[];
     if(rain24!=null)warn.push(`Βροχή ${inH(rain24)} (${nf.format(num(h.precipitation_probability[rain24]))}%). ${olive?'Με βρεγμένο καρπό το μάζεμα δυσκολεύει και ο καρπός δεν πρέπει να μείνει στα τσουβάλια.':vine?'Τα βρεγμένα σταφύλια σαπίζουν εύκολα· καλύτερα τρύγος πριν τη βροχή.':'Ο καρπός βρέχεται.'}`);
     const tMin=Math.min(...n24.map(i=>num(h.temperature_2m[i])));if(tMin<=1)warn.push(`Πιθανός παγετός (έως ${Math.round(tMin)}°).`);
     const g24=Math.max(...n24.map(i=>num(h.wind_gusts_10m?.[i])));if(g24>45)warn.push(`Δυνατός αέρας, ριπές έως ${Math.round(g24)} km/h.`);
-    return `<b>Καιρός για ${vine?'τρύγο':'συγκομιδή'} στο «${esc(f.name)}»</b>${warn.length?warn.map(x=>`<div class="wxw">⚠ ${x}</div>`).join(''):'<div class="wxok">Χωρίς βροχή το επόμενο 24ωρο.</div>'}${foot}`}
+    return `<h2>Καιρός για ${vine?'τρύγο':'συγκομιδή'} στο «${esc(f.name)}»</h2>${warn.length?warn.map(x=>`<div class="wxw">${WARN_SVG}<span>${x}</span></div>`).join(''):'<div class="wxok">Χωρίς βροχή το επόμενο 24ωρο.</div>'}${foot}`}
   const warn=[];
   if(rainAt!=null)warn.push(`Βροχή ${inH(rainAt)} (${nf.format(num(h.precipitation_probability[rainAt]))}%). Ο ψεκασμός μπορεί να ξεπλυθεί.`);
   if(windMax>15||gust>25)warn.push(`Αέρας έως ${Math.round(windMax)} km/h${gust>25?`, ριπές ${Math.round(gust)} km/h`:''}. Το φάρμακο παρασύρεται.`);
@@ -1409,7 +1424,7 @@ function wxHtml(w,f,mode){const h=w.hourly,now=new Date(),td=localIso(now);const
   // The first three dry, calm and mild daylight hours in a row within a day.
   const ok=j=>j<h.time.length&&!wet(j)&&num(h.precipitation_probability[j])<30&&num(h.wind_speed_10m[j])<=12&&num(h.temperature_2m[j])<=28&&+h.time[j].slice(11,13)>=6&&+h.time[j].slice(11,13)<=19;
   const best=n24.find(i=>ok(i)&&ok(i+1)&&ok(i+2));
-  return `<b>Καιρός για ψεκασμό στο «${esc(f.name)}»</b>${warn.length?warn.map(x=>`<div class="wxw">⚠ ${x}</div>`).join(''):`<div class="wxok">Καλές συνθήκες τις επόμενες 6 ώρες: χωρίς βροχή, αέρας έως ${Math.round(windMax)} km/h, έως ${Math.round(tMax)}°.</div>`}
+  return `<h2>Καιρός για ψεκασμό στο «${esc(f.name)}»</h2>${warn.length?warn.map(x=>`<div class="wxw">${WARN_SVG}<span>${x}</span></div>`).join(''):`<div class="wxok">Καλές συνθήκες τις επόμενες 6 ώρες: χωρίς βροχή, αέρας έως ${Math.round(windMax)} km/h, έως ${Math.round(tMax)}°.</div>`}
     ${warn.length?`<div class="note">${best!=null?`Καλύτερη ώρα: ${when(best)}.`:'Δεν βρέθηκε καλή ώρα μέσα στο επόμενο 24ωρο.'}</div>`:''}${rain24!=null&&rainAt==null?`<div class="note">Βροχή πιθανή ${when(rain24)}.</div>`:''}${foot}`}
 
 /* ---------- workers ---------- */
