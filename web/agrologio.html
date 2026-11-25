@@ -63,6 +63,7 @@ section[hidden]{display:none!important}
 .kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
 .num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .pos{color:var(--good)} .neg{color:var(--bad)}
+#wpForm .wphint{flex-basis:100%;width:100%;grid-column:1/-1;margin:2px 0 0}#wpForm .wphint:empty{display:none}.wpowe{display:flex;flex-direction:column;align-items:flex-end;gap:3px}.wpowe .note{font-weight:400}
 .big{font-family:var(--f-display);font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
 .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
 button,.btn{font:600 .92rem var(--f-body);border-radius:8px;padding:9px 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
@@ -441,9 +442,8 @@ const PDF_FONT_BOLD="AAEAAAAOAIAAAwBgR0RFRgQQBEYAAGX8AAAAKEdQT1NEdkx1AABmJAAAACB
 <script>
 // Buttons inside generated HTML say what they do with data-act (no inline handlers, so the desktop page can forbid inline scripts).
 const ACTS={photoView:(b,a)=>openPhotos(a),
-  wpNew:()=>{$('#wpForm').hidden=false;$('#wpAmt').focus()},wpCancel:()=>{$('#wpForm').hidden=true},
-  wpAll:async(b,a)=>{const w=workerList()[+a];if(!w||!(w.owed>0))return;if(!confirm(`Να γραφτεί πληρωμή ${money(w.owed)} στον/στην ${w.name} με σημερινή ημερομηνία;`))return;
-    try{const ref=await db.collection('entries').add({kind:'wpay',fieldId:'__pay',worker:w.name,amount:w.owed,date:today(),createdAt:Date.now(),updatedAt:Date.now()});toast('Εξοφλήθηκε',ref?.id?()=>db.doc('entries/'+ref.id).delete():null)}catch(err){toast('Δεν αποθηκεύτηκε: '+(err.message||err.code))}},
+  wpNew:()=>{const ws=workerList();openPay(Math.max(0,ws.findIndex(w=>w.owed>0.004)))},wpCancel:()=>{$('#wpForm').hidden=true},
+  wpAll:(b,a)=>openPay(+a),
   wpDel:async(b,a)=>{if(!confirm('Να διαγραφεί αυτή η πληρωμή;'))return;const e=S.extra.get(a);try{await db.doc('entries/'+a).delete();toast('Η πληρωμή διαγράφηκε',e?restoreEntry(a,e):null)}catch(err){toast('Δεν διαγράφηκε: '+(err.message||err.code))}},
   workers:()=>{go('entry');$('#workerCard')?.scrollIntoView({behavior:'smooth',block:'start'})},
   mcNew:()=>{const f=$('#mcForm');f.hidden=false;delete f.dataset.id;f.reset();$('#mcName').focus()},mcCancel:()=>{$('#mcForm').hidden=true},
@@ -1435,14 +1435,24 @@ function workerList(){let r=memo.get('workers');if(r)return r;const by=new Map()
 function renderWorkers(){const el=$('#workerCard');if(!el)return;if(document.activeElement?.closest('#wpForm'))return;if(!db||!S.fields.size){el.hidden=true;return}el.hidden=false;const ws=workerList();
   el.innerHTML=`<div class="row" style="justify-content:space-between"><h2>Εργάτες</h2>${ws.length?'<button type="button" data-act="wpNew">+ Πληρωμή</button>':''}</div>
   <p class="note">Γράψε το όνομα του εργάτη στη γραμμή «Εργατικά» της καταχώρισης. Εδώ φαίνεται πόσα μεροκάματα έκανε, πόσα πληρώθηκε και τι του χρωστάς. Η πληρωμή δεν είναι νέο έξοδο, γιατί τα μεροκάματα μετράνε ήδη στα έξοδα.</p>
-  <form id="wpForm" class="fields" hidden><label class="f">Εργάτης<select id="wpWho">${ws.map(w=>`<option>${esc(w.name)}</option>`).join('')}</select></label><label class="f">Ποσό (€)<input id="wpAmt" type="number" min="0" step="any" inputmode="decimal" required></label><label class="f">Ημερομηνία<input id="wpDate" type="date" required value="${today()}"></label>
-    <div class="row" style="align-self:end"><button class="primary" type="submit">Αποθήκευση πληρωμής</button><button type="button" data-act="wpCancel">Ακύρωση</button></div></form>
-  ${ws.length?`<div class="tablewrap"><table class="rep"><thead><tr><th>Εργάτης</th><th class="r">Μεροκάματα</th><th class="r">Αξία</th><th class="r">Πληρώθηκαν</th><th class="r">Χρωστάς</th></tr></thead>
+  <form id="wpForm" class="fields" hidden><label class="f">Εργάτης<select id="wpWho">${ws.map(w=>`<option>${esc(w.name)}</option>`).join('')}</select></label><label class="f">Ποσό που δίνεις (€)<input id="wpAmt" type="number" min="0" step="any" inputmode="decimal" required></label><label class="f">Ημερομηνία<input id="wpDate" type="date" required value="${today()}"></label>
+    <div class="row" style="align-self:end"><button class="primary" type="submit">Αποθήκευση πληρωμής</button><button type="button" data-act="wpCancel">Ακύρωση</button></div><p id="wpHint" class="wphint" aria-live="polite"></p></form>
+  ${ws.length?`<div class="tablewrap"><table class="rep"><thead><tr><th>Εργάτης</th><th class="r">Μεροκάματα</th><th class="r">Αξία</th><th class="r">Πληρώθηκαν</th><th class="r">Υπόλοιπο</th></tr></thead>
   <tbody>${ws.map((w,i)=>`<tr><td><b>${esc(w.name)}</b>${w.pays.length?`<details><summary class="note">${plural(w.pays.length,'πληρωμή','πληρωμές')}</summary>${w.pays.map(p=>`<div class="row note" style="gap:8px">${fmtDate(p.date)} · ${eur2.format(num(p.amount))}<button type="button" class="ghost danger" data-act="wpDel" data-arg="${p.id}">Διαγραφή</button></div>`).join('')}</details>`:''}</td>
-    <td class="r">${nf.format(r1(w.days))}</td><td class="r">${money(w.amt)}</td><td class="r">${money(w.paid)}</td><td class="r ${w.owed>0.004?'neg':''}"><b>${money(w.owed)}</b>${w.owed>0.004?`<br><button type="button" data-act="wpAll" data-arg="${i}">Εξόφληση</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<p class="note">Δεν έχεις γράψει ακόμα εργάτη με όνομα.</p>'}`;
+    <td class="r">${nf.format(r1(w.days))}</td><td class="r">${money(w.amt)}</td><td class="r">${money(w.paid)}</td><td class="r ${w.owed>0.004?'neg':w.owed<-0.004?'pos':''}"><div class="wpowe"><b>${eur2.format(Math.abs(w.owed))}</b>${w.owed>0.004?'<span class="note">προς εξόφληση</span>':w.owed<-0.004?'<span class="note">προκαταβολή</span>':''}<button type="button" data-act="wpAll" data-arg="${i}">Πληρωμή</button></div></td></tr>`).join('')}</tbody></table></div>`:'<p class="note">Δεν έχεις γράψει ακόμα εργάτη με όνομα.</p>'}`;
   labelCells(el);
-  $('#wpForm').onsubmit=async ev=>{ev.preventDefault();const worker=$('#wpWho').value,amount=num($('#wpAmt').value),date=$('#wpDate').value;if(!worker||!(amount>0)||!isDate(date)){toast('Γράψε εργάτη, ποσό και ημερομηνία');return}document.activeElement?.blur();
-    try{await db.collection('entries').add({kind:'wpay',fieldId:'__pay',worker,amount,date,createdAt:Date.now(),updatedAt:Date.now()});toast('Η πληρωμή αποθηκεύτηκε')}catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code))}}}
+  $('#wpWho').onchange=()=>{const w=ws[$('#wpWho').selectedIndex];$('#wpAmt').value=w&&w.owed>0.004?w.owed:'';wpHint()};$('#wpAmt').oninput=wpHint;
+  $('#wpForm').onsubmit=async ev=>{ev.preventDefault();const w=ws[$('#wpWho').selectedIndex],worker=$('#wpWho').value,amount=num($('#wpAmt').value),date=$('#wpDate').value;if(!worker||!(amount>0)||!isDate(date)){toast('Γράψε εργάτη, ποσό και ημερομηνία');return}document.activeElement?.blur();$('#wpForm').hidden=true;
+    const left=Math.round(((w?.owed||0)-amount)*100)/100,msg=left>0.004?`Η πληρωμή αποθηκεύτηκε. Μένουν ${eur2.format(left)} προς εξόφληση`:left<-0.004?`Η πληρωμή αποθηκεύτηκε. ${eur2.format(-left)} προκαταβολή`:'Εξοφλήθηκε';
+    try{const ref=await db.collection('entries').add({kind:'wpay',fieldId:'__pay',worker,amount,date,createdAt:Date.now(),updatedAt:Date.now()});toast(msg,ref?.id?()=>db.doc('entries/'+ref.id).delete():null)}catch(e){toast('Δεν αποθηκεύτηκε: '+(e.message||e.code))}}}
+// Opens the payment form for one worker with the amount still owed filled in; the amount can be changed.
+function openPay(i){const w=workerList()[i];const f=$('#wpForm');if(!w||!f)return;f.hidden=false;$('#wpWho').selectedIndex=i;$('#wpAmt').value=w.owed>0.004?w.owed:'';$('#wpDate').value=today();wpHint();
+  $('#workerCard').scrollIntoView({behavior:'smooth',block:'start'});const a=$('#wpAmt');a.focus();a.select?.()}
+// Shows, while typing, what is left to pay (or paid in advance) after this payment.
+function wpHint(){const h=$('#wpHint');if(!h)return;const w=workerList()[$('#wpWho').selectedIndex];if(!w){h.innerHTML='';return}const raw=$('#wpAmt').value.trim(),amt=num(raw),owed=w.owed;
+  const due=owed>0.004?`Υπολογισμένο ποσό: <b>${eur2.format(owed)}</b>.`:owed<-0.004?`Έχει ήδη πάρει <b>${eur2.format(-owed)}</b> προκαταβολή.`:'Δεν του χρωστάς τίποτα.';
+  if(!raw){h.innerHTML=due;return}const left=Math.round((owed-amt)*100)/100;
+  h.innerHTML=`${due} ${left>0.004?`<span class="neg">Μένει υπόλοιπο <b>${eur2.format(left)}</b> προς εξόφληση.</span>`:left<-0.004?`<span class="pos">Δίνεις <b>${eur2.format(-left)}</b> παραπάνω. Μετράνε ως προκαταβολή για τα επόμενα μεροκάματα.</span>`:'<span class="pos">Εξοφλείται πλήρως.</span>'}`}
 
 /* ---------- tractors and machines ---------- */
 function machineList(){let r=memo.get('mach');if(r)return r;
@@ -1470,12 +1480,12 @@ function debts(){const g=new Map();for(const [id,e] of S.entries){if(!e.unpaid)c
     const amt=e.kind==='income'?num(e.amount):(e.lines||[]).filter(l=>!(l.cat==='labor'&&l.worker)).reduce((a,l)=>a+num(l.amount),0);if(amt<0.005)continue;
     const o=g.get(k)||{ids:[],e,amt:0,fields:[]};o.ids.push(id);o.amt+=amt;const fn=e.kind==='farm'?'Όλο το κτήμα':S.fields.get(e.fieldId)?.name;if(fn&&!o.fields.includes(fn))o.fields.push(fn);g.set(k,o)}
   return [...g.values()].sort((a,b)=>a.e.date.localeCompare(b.e.date))}
-function debtsHtml(){const ds=debts(),ws=workerList().filter(w=>w.owed>0.004);if(!ds.length&&!ws.length)return '';
+function debtsHtml(){const ds=debts(),ws=workerList().filter(w=>w.owed>0.004),wa=workerList().filter(w=>w.owed<-0.004);if(!ds.length&&!ws.length&&!wa.length)return '';
   const out=ds.filter(d=>d.e.kind!=='income'),inn=ds.filter(d=>d.e.kind==='income'),tot=a=>a.reduce((x,d)=>x+d.amt,0),wt=ws.reduce((x,w)=>x+w.owed,0);
   const row=d=>`<div class="rem"><span class="when">${fmtDate(d.e.date)}</span><span class="txt">${d.e.party?`<b>${esc(d.e.party)}</b> · `:''}${esc(d.e.kind==='income'?INC[d.e.incomeKind]?.name||'Έσοδο':d.e.task)} · ${esc(d.fields.join(', '))}</span><span class="num">${money(d.amt)}</span><button type="button" data-act="paid" data-arg="${d.ids.join(',')}">Πληρώθηκε</button></div>`;
   return `<div class="card" id="debtCard"><h2>Οφειλές</h2><div class="debtgrid">
     <div><span class="label">Χρωστάς</span><span class="big neg">${money(tot(out)+wt)}</span>${out.map(row).join('')}${ws.length?`<div class="rem"><span class="when">Εργάτες</span><span class="txt">${ws.map(w=>`${esc(w.name)} ${money(w.owed)}`).join(' · ')}</span><button type="button" data-act="workers">Πληρωμή</button></div>`:''}${!out.length&&!ws.length?'<p class="note">Τίποτα.</p>':''}</div>
-    <div><span class="label">Σου χρωστάνε</span><span class="big pos">${money(tot(inn))}</span>${inn.map(row).join('')||'<p class="note">Τίποτα.</p>'}</div></div>
+    <div><span class="label">Σου χρωστάνε</span><span class="big pos">${money(tot(inn)-wa.reduce((x,w)=>x+w.owed,0))}</span>${inn.map(row).join('')}${wa.length?`<div class="rem"><span class="when">Εργάτες</span><span class="txt">Προκαταβολή: ${wa.map(w=>`${esc(w.name)} ${money(-w.owed)}`).join(' · ')}</span><button type="button" data-act="workers">Εργάτες</button></div>`:''}${!inn.length&&!wa.length?'<p class="note">Τίποτα.</p>':''}</div></div>
     <p class="note">Τα απλήρωτα μετράνε κανονικά στο κέρδος της χρονιάς τους. Εδώ φαίνεται μόνο τι μένει να πληρωθεί.</p></div>`}
 
 /* ---------- reminders ---------- */
