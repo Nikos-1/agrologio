@@ -278,9 +278,10 @@ html{scroll-padding-top:136px}@media (max-width:760px){html{scroll-padding-top:1
           </div>
           <div id="harvestPart" class="stack" hidden>
             <div class="fields" id="eKgWrap">
-              <label class="f">Κιλά καρπού<input id="eKgFruit" type="number" min="0" step="any" inputmode="decimal"></label>
+              <label class="f"><span id="eKgFruitTxt">Κιλά καρπού</span><input id="eKgFruit" type="number" min="0" step="any" inputmode="decimal"></label>
               <label class="f" id="eKgOilWrap">Κιλά λαδιού<input id="eKgOil" type="number" min="0" step="any" inputmode="decimal"></label>
             </div>
+            <p class="note" id="eKgNote" hidden>Τα κιλά της ημέρας είναι κατά προσέγγιση. Τα πραγματικά κιλά (καρπός και λάδι) γράφονται στην Άλεση, και αυτά μετράνε στις αναφορές μόλις υπάρχουν.</p>
             <label class="check"><input type="checkbox" id="eHarvestDone"> Τελείωσε η συγκομιδή για αυτή τη χρονιά (η επόμενη εργασία ανοίγει νέα χρονιά)</label>
           </div>
           <div id="millPart" class="stack" hidden>
@@ -628,10 +629,11 @@ function toast(msg,undo){const t=$('#toast');t.textContent=msg;t.hidden=false;cl
   toast.t=setTimeout(()=>t.hidden=true,undo?8000:Math.min(9000,3500+msg.length*40))}
 const restoreEntry=(id,e)=>()=>db.doc('entries/'+id).set(e);
 // What a work entry shows on the right: its cost, or for Άλεση / a harvest without costs the kilos (never «−0 €»).
+const kgf=(v,est)=>(est?'≈ ':'')+nf.format(v);
 const plural=(n,one,many)=>`${nf.format(n)} ${n===1?one:many}`;
 function workAmt(e,c=entryCost(e)){if(c>0.004)return `<span class="num neg">−${money(c)}</span>`;
   if(MILL.has(e.task))return `<span class="num"><span class="mseg">${nf.format(num(e.kgOil))} κ. λάδι</span>${e.storedKg?`<span class="mseg"> · ${nf.format(num(e.storedKg))} σε φύλαξη</span>`:''}</span>`;
-  if(e.kgFruit||e.kgOil)return `<span class="num">${e.kgOil?nf.format(num(e.kgOil))+' κ. λάδι':nf.format(num(e.kgFruit))+' κ. καρπού'}</span>`;
+  if(e.kgFruit||e.kgOil){const est=HARVEST.has(e.task)&&S.fields.get(e.fieldId)?.crop==='olive';return `<span class="num">${e.kgOil?kgf(num(e.kgOil),est)+' κ. λάδι':kgf(num(e.kgFruit),est)+' κ. καρπού'}</span>`}
   return '<span class="num note">χωρίς κόστος</span>'}
 const workAmtTxt=e=>workAmt(e).replace(/<[^>]+>/g,'');
 
@@ -683,7 +685,9 @@ function stats(){
   for(const id of S.fields.keys())get(id,openSeason(id));
   for(const s of map.values()){
     const f=S.fields.get(s.fieldId);
-    if(s.mOil){s.kgOil=s.mOil;if(s.mFruit)s.kgFruit=s.mFruit}
+    // Olives: the kilos weighed at the mill are the real ones; those written on harvest days are only an estimate until then.
+    if(s.mOil)s.kgOil=s.mOil;if(s.mFruit)s.kgFruit=s.mFruit;
+    s.fruitEst=f.crop==='olive'&&!s.mFruit&&s.kgFruit>0;s.oilEst=f.crop==='olive'&&!s.mOil&&s.kgOil>0;
     s.oilStock=s.stored?r1(s.stored-s.oilSoldKg):0;s.oilAvg=s.oilSoldKg?s.oilSoldAmt/s.oilSoldKg:null;
     const str=s.closed&&s.str!=null?s.str:num(f.stremmata);s.stremmata=str;
     s.subsidyEst=str*subRate(s.season,f.crop);
@@ -870,7 +874,8 @@ function logDetail(e){const id=e.id;
     if(lineEdit&&lineEdit.id===id&&lineEdit.i===i){const eurL=c.unit==='€';
       return `<div class="dline editing"><span>${esc(c.name)}</span><span class="dq row" style="gap:6px;flex-wrap:nowrap">${eurL?`<input class="ea" type="number" min="0" step="any" value="${num(l.amount)}" aria-label="Ποσό">`:`<input class="eq" type="number" min="0" step="any" value="${num(l.qty)}" aria-label="${esc(c.unit)}"> × <input class="ep" type="number" min="0" step="any" value="${num(l.price)}" aria-label="Τιμή">`}</span><span></span><span class="acts"><button type="button" class="primary" data-act="lsave" data-id="${id}" data-i="${i}">Αποθήκευση</button><button type="button" data-act="lcancel" data-id="${id}">Ακύρωση</button></span></div>`}
     return `<div class="dline"><span>${esc(c.name)}${l.worker?' · '+esc(l.worker):''}${l.machine?' · '+esc(S.extra.get(l.machine)?.name||'μηχάνημα'):''}</span><span class="dq">${l.qty?`${nf.format(num(l.qty))} ${esc(c.unit)} × ${eur2.format(num(l.price))}`:''}</span><span class="num">${eur2.format(num(l.amount))}</span><span class="acts"><button type="button" class="iconbtn" data-act="ledit" data-id="${id}" data-i="${i}" title="Αλλαγή" aria-label="Αλλαγή">${PEN}</button>${binBtn(i,'ldel',i)}</span></div>`}).join('')||'<p class="note">Δεν έχει εγγραφές εξόδων.</p>';
-  const extra=[e.kgFruit?`${nf.format(num(e.kgFruit))} κιλά καρπού`:'',e.kgOil?`${nf.format(num(e.kgOil))} κιλά λαδιού`:'',e.millKeptKg?`κράτηση ελαιουργείου ${nf.format(num(e.millKeptKg))} κ.${e.millPct?` (${nf.format(e.millPct)}%)`:''}`:'',MILL.has(e.task)?`υπόλοιπο ${nf.format(num(e.kgOil)-num(e.millKeptKg))} κ.`:'',e.homeKg?`σπίτι ${nf.format(num(e.homeKg))} κ.`:'',MILL.has(e.task)?`σε φύλαξη ${nf.format(num(e.storedKg))} κ.`:'',e.note?esc(e.note):''].filter(Boolean).join(' · ');
+  const hEst=HARVEST.has(e.task)&&S.fields.get(e.fieldId)?.crop==='olive';
+  const extra=[e.kgFruit?`${kgf(num(e.kgFruit),hEst)} κιλά καρπού${hEst?' (περίπου· τα πραγματικά είναι της άλεσης)':''}`:'',e.kgOil?`${kgf(num(e.kgOil),hEst)} κιλά λαδιού`:'',e.millKeptKg?`κράτηση ελαιουργείου ${nf.format(num(e.millKeptKg))} κ.${e.millPct?` (${nf.format(e.millPct)}%)`:''}`:'',MILL.has(e.task)?`υπόλοιπο ${nf.format(num(e.kgOil)-num(e.millKeptKg))} κ.`:'',e.homeKg?`σπίτι ${nf.format(num(e.homeKg))} κ.`:'',MILL.has(e.task)?`σε φύλαξη ${nf.format(num(e.storedKg))} κ.`:'',e.note?esc(e.note):''].filter(Boolean).join(' · ');
   return `<div class="detail">${rows}${e.kind!=='income'&&(e.lines||[]).length?`<div class="dline dtotal"><span>Σύνολο</span><span></span><span class="num">${eur2.format(entryCost(e))}</span><span></span></div>`:''}${extra?`<p class="note">${extra}</p>`:''}${(e.products||[]).map(p=>`<p class="note">🧪 ${esc(prodTxt(p,S.fields.get(e.fieldId)?.stremmata))}</p>`).join('')}${e.buyer||e.invoice?`<p class="note">${e.buyer?'Αγοραστής: '+esc(e.buyer):''}${e.buyer&&e.invoice?' · ':''}${e.invoice?'Παραστατικό: '+esc(e.invoice):''}</p>`:''}${e.damage?`<p class="note">Ζημιά: ${esc(e.damage.cause||'')}${num(e.damage.pct)?' · '+nf.format(num(e.damage.pct))+' %':''}${e.damage.decl?' · δήλωση '+esc(e.damage.decl):''}</p>`:''}${e.subsidyType?`<p class="note">Είδος ενίσχυσης: ${esc(SUB_NAME[e.subsidyType]||'')}</p>`:''}${e.decl?`<p class="note">Δήλωση ΕΛΓΑ: ${esc(e.decl)}</p>`:''}${e.unpaid?`<p class="note">Δεν έχει πληρωθεί ακόμα${e.party?' · '+esc(e.party):''}</p>`:e.paidDate?`<p class="note">Πληρώθηκε ${fmtDate(e.paidDate)}${e.party?' · '+esc(e.party):''}</p>`:''}${(e.lines||[]).some(l=>l.fromStock)?'<p class="note">Τα έξοδα φαρμάκων και λιπασμάτων από την αποθήκη υπολογίστηκαν μόνα τους.</p>':''}${e.photos?.length?`<p><button type="button" data-act="photoView" data-arg="entry:${id}">📷 ${plural(e.photos.length,'φωτογραφία','φωτογραφίες')}</button></p>`:''}
     <div class="row dentry"><span class="note">Όλη η καταχώριση</span><button type="button" data-act="edit" data-id="${id}">${PEN} Αλλαγή</button>${e.kind!=='income'&&!HARVEST.has(e.task)&&!MILL.has(e.task)||e.kind==='income'?`<button type="button" data-act="repeat" data-id="${id}" title="Νέα καταχώριση με τα ίδια στοιχεία και σημερινή ημερομηνία">↻ Επανάληψη</button>`:''}${sure('e')?`<button type="button" class="danger sure" data-act="del" data-id="${id}">Σίγουρα; Διαγραφή καταχώρισης</button>`:`<button type="button" class="danger" data-act="del" data-id="${id}">${BIN} Διαγραφή</button>`}</div></div>`}
 async function logAction(ev){const b=ev.target.closest('[data-act]');if(!b)return;const {act,id}=b.dataset;const i=+b.dataset.i;const e=S.entries.get(id);
@@ -1135,7 +1140,7 @@ function compareHtml(){const all=stats();const cards=fieldsSorted().map(f=>{cons
     return `<div class="card"><div class="row" style="justify-content:space-between"><b>${esc(f.name)}</b>${cropChip(f.crop)}</div>
       <svg class="cmp" viewBox="0 0 ${W} ${H}" role="img" aria-label="Καθαρό ${perStr?'ανά στρέμμα ':''}ανά χρονιά για ${esc(f.name)}"><line x1="0" x2="${W}" y1="${y0}" y2="${y0}" class="cbase"/>${bars}</svg>
       <p class="note">Καθαρό ${perStr?'ανά στρέμμα':''} κάθε χρονιάς. Η πιο αχνή στήλη είναι χρονιά σε εξέλιξη.</p>
-      <div>${ss.slice().reverse().map(s=>{const d=perStr&&s.stremmata?s.stremmata:1;return `<div class="cmpy"><b>${esc(seasonName(s.season,f.crop))}${s.closed?'':' *'}</b><b class="${signCls(s.net)}">${eur.format(s.net/d)}</b><span class="note">έξοδα ${eur.format(s.cost/d)} · έσοδα ${eur.format(s.income/d)}${s.kgMain?` · ${nf.format(Math.round(s.kgMain/d))} κιλά`:''}${s.costPerKg!=null?` · ${eur2.format(s.costPerKg)}/κιλό`:''}</span></div>`}).join('')}</div>
+      <div>${ss.slice().reverse().map(s=>{const d=perStr&&s.stremmata?s.stremmata:1;return `<div class="cmpy"><b>${esc(seasonName(s.season,f.crop))}${s.closed?'':' *'}</b><b class="${signCls(s.net)}">${eur.format(s.net/d)}</b><span class="note">έξοδα ${eur.format(s.cost/d)} · έσοδα ${eur.format(s.income/d)}${s.kgMain?` · ${kgf(Math.round(s.kgMain/d),s.oilEst)} κιλά`:''}${s.costPerKg!=null?` · ${s.oilEst?'≈ ':''}${eur2.format(s.costPerKg)}/κιλό`:''}</span></div>`}).join('')}</div>
       <p class="note">${perStr?'Καθαρό, έξοδα, έσοδα και κιλά ανά στρέμμα. ':''}€/κιλό: κόστος κάθε κιλού${f.crop==='olive'?' λαδιού':''}.${ss.some(s=>!s.closed)?' * σε εξέλιξη':''}</p></div>`}).filter(Boolean);
   return cards.length?`<h2>Σύγκριση χρονιών</h2><div class="grid">${cards.join('')}</div>`:''}
 // Phone layout needs each cell to know its column name.
@@ -1148,7 +1153,7 @@ function renderReports(){
   const byCrop={};for(const s of st){const f=S.fields.get(s.fieldId);const k=f.crop;const c=byCrop[k]??={cost:0,income:0,net:0,str:0,plants:0,kgFruit:0,kgOil:0,millKept:0,home:0,stored:0,oilSoldKg:0,oilSoldAmt:0,oilStock:0,n:0,byCat:{}};
     c.cost+=s.cost;c.income+=s.income;c.net+=s.net;c.kgFruit+=s.kgFruit;c.kgOil+=s.kgOil;c.millKept+=s.millKept;c.home+=s.home;c.stored+=s.stored;c.oilSoldKg+=s.oilSoldKg;c.oilSoldAmt+=s.oilSoldAmt;c.oilStock+=s.oilStock;c.n++;c.sales=(c.sales||0)+s.sales;c.kgMain=(c.kgMain||0)+(s.kgMain||0);for(const [k2,v] of Object.entries(s.byCat))c.byCat[k2]=(c.byCat[k2]||0)+v;
     // Στρέμματα counted once per field and year, so «ανά στρέμμα» over several years is a yearly average.
-    c.str+=s.stremmata;c.plants+=num(f.plants);if(s.kgFruit&&s.kgOil){c.yF=(c.yF||0)+s.kgFruit;c.yO=(c.yO||0)+s.kgOil}}
+    c.str+=s.stremmata;c.plants+=num(f.plants);if(s.fruitEst)c.fEst=1;if(s.oilEst)c.oEst=1;if(s.kgFruit&&s.kgOil){c.yF=(c.yF||0)+s.kgFruit;c.yO=(c.yO||0)+s.kgOil}}
   const multi=sel==='';
   const catBar=byCat=>{const tot=Object.values(byCat).reduce((a,b)=>a+b,0);if(!tot)return '<p class="note">Χωρίς έξοδα ακόμα.</p>';
     const parts=CATS.filter(c=>byCat[c.id]>0);return `<div class="bar">${parts.map(c=>`<span style="width:${byCat[c.id]/tot*100}%;background:${c.color}" title="${c.name}"></span>`).join('')}</div><div class="legend">${parts.map(c=>`<span><i style="background:${c.color}"></i>${c.name} ${money(byCat[c.id])}</span>`).join('')}</div>`};
@@ -1160,7 +1165,7 @@ function renderReports(){
     <dl class="kv"><dt>Έσοδα (με επιδότηση)</dt><dd>${money(c.income)}</dd><dt>Έξοδα</dt><dd>${money(c.cost)}</dd>
     <dt>Ανά στρέμμα${multi?' τον χρόνο':''}</dt><dd class="${signCls(c.net)}">${c.str?eur.format(c.net/c.str):'–'}</dd>
     ${c.kgMain?`<dt>Κόστος ανά κιλό${k==='olive'?' λαδιού':''}</dt><dd>${eur2.format(c.cost/c.kgMain)}</dd><dt>Χωρίς ζημιά από</dt><dd>${eur2.format(Math.max(0,c.cost-(c.income-c.sales))/c.kgMain)} / κιλό</dd>`:''}
-    ${k==='olive'?`<dt>Λάδι</dt><dd>${nf.format(c.kgOil)} κιλά${c.yF?` · απόδοση ${nf.format(c.yO/c.yF*100)}%`:''}</dd>${c.millKept||c.home||c.stored?`<dt>Από το λάδι</dt><dd>κράτηση ${nf.format(c.millKept)} · σπίτι ${nf.format(c.home)} · φύλαξη ${nf.format(c.stored)} κιλά</dd><dt>Πωλήσεις λαδιού</dt><dd>${nf.format(c.oilSoldKg)} κιλά${c.oilSoldKg?` · μέση τιμή ${eur2.format(c.oilSoldAmt/c.oilSoldKg)}/κ.`:''} · απόθεμα <b>${nf.format(c.oilStock)} κιλά</b></dd>`:''}`:`<dt>${k==='vine'?'Σταφύλια':'Παραγωγή'}</dt><dd>${nf.format(c.kgFruit)} κιλά</dd>`}</dl>
+    ${k==='olive'?`<dt>Λάδι</dt><dd>${c.kgOil?kgf(c.kgOil,c.oEst)+' κιλά':'<span class="note">φαίνεται μετά την άλεση</span>'}${c.yF?` · απόδοση ${c.fEst||c.oEst?'≈ ':''}${nf.format(c.yO/c.yF*100)}%`:''}</dd>${c.kgFruit?`<dt>Καρπός</dt><dd>${kgf(c.kgFruit,c.fEst)} κιλά${c.fEst?' <span class="note">(εκτίμηση συγκομιδής)</span>':''}</dd>`:''}${c.millKept||c.home||c.stored?`<dt>Από το λάδι</dt><dd>κράτηση ${nf.format(c.millKept)} · σπίτι ${nf.format(c.home)} · φύλαξη ${nf.format(c.stored)} κιλά</dd><dt>Πωλήσεις λαδιού</dt><dd>${nf.format(c.oilSoldKg)} κιλά${c.oilSoldKg?` · μέση τιμή ${eur2.format(c.oilSoldAmt/c.oilSoldKg)}/κ.`:''} · απόθεμα <b>${nf.format(c.oilStock)} κιλά</b></dd>`:''}`:`<dt>${k==='vine'?'Σταφύλια':'Παραγωγή'}</dt><dd>${nf.format(c.kgFruit)} κιλά</dd>`}</dl>
     ${catBar(c.byCat)}</div>`).join('')}</div>
   ${compareHtml()}
   <h2>Ανά αγροτεμάχιο και χρονιά</h2>
@@ -1168,9 +1173,9 @@ function renderReports(){
     <thead><tr><th>Αγροτεμάχιο</th><th>Χρονιά</th><th>Κατάσταση</th><th class="r">Έξοδα</th><th class="r">εκ των οποίων οικογ.</th><th class="r">Πωλήσεις</th><th class="r">Επιδότηση</th><th class="r">Καθαρό</th><th class="r">/ στρέμμα</th><th class="r">Παραγωγή</th><th class="r">Κόστος / κιλό</th></tr></thead>
     <tbody>${st.map(s=>{const f=S.fields.get(s.fieldId);return `<tr><td>${esc(f.name)} ${cropChip(f.crop)}</td><td>${seasonName(s.season,f.crop)}</td><td>${s.closed?'<span class="chip closed">Ολοκληρώθηκε</span>':'<span class="chip open">Σε εξέλιξη</span>'}</td>
       <td class="r">${money(s.cost)}</td><td class="r">${money(s.family)}</td><td class="r">${money(s.sales+s.otherInc)}</td><td class="r">${money(s.subsidy)}${s.subsidyIsEst?'*':''}${s.subsidyPart?`<br><small class="muted">από ${money(s.subsidyPart)} εκτίμηση</small>`:''}</td>
-      <td class="r ${signCls(s.net)}"><b>${money(s.net)}</b></td><td class="r ${signCls(s.net)}">${s.perStr!=null?eur.format(s.perStr):'–'}</td>      <td class="r">${f.crop==='olive'?(s.kgOil?nf.format(s.kgOil)+' κ. λάδι':'–'):(s.kgFruit?nf.format(s.kgFruit)+' κ.':'–')}</td><td class="r">${s.costPerKg!=null?eur2.format(s.costPerKg):'–'}</td></tr>`}).join('')}</tbody>
+      <td class="r ${signCls(s.net)}"><b>${money(s.net)}</b></td><td class="r ${signCls(s.net)}">${s.perStr!=null?eur.format(s.perStr):'–'}</td>      <td class="r">${f.crop==='olive'?(s.kgOil?kgf(s.kgOil,s.oilEst)+' κ. λάδι':s.kgFruit?kgf(s.kgFruit,s.fruitEst)+' κ. καρπού':'–'):(s.kgFruit?nf.format(s.kgFruit)+' κ.':'–')}</td><td class="r">${s.costPerKg!=null?(s.oilEst?'≈ ':'')+eur2.format(s.costPerKg):'–'}</td></tr>`}).join('')}</tbody>
   </table></div>
-  <p class="note">Κόστος / κιλό: τα έξοδα της χρονιάς διά τα κιλά (λαδιού στις ελιές). «Χωρίς ζημιά από»: η τιμή πώλησης που καλύπτει τα έξοδα, αφού μετρήσει η επιδότηση και τα άλλα έσοδα.</p><p class="note">* Εκτίμηση επιδότησης από τις Ρυθμίσεις (στρέμματα × ποσό ανά στρέμμα). Το καθαρό κέρδος μετράει και την οικογενειακή εργασία ως κόστος· χωρίς αυτήν θα ήταν ${money(st.reduce((a,s)=>a+s.net+s.family,0))}.</p>`;
+  <p class="note">Στις ελιές τα κιλά είναι της άλεσης. Όπου δεν έχει γίνει ακόμα άλεση φαίνονται τα κιλά της συγκομιδής με «≈», γιατί είναι κατά προσέγγιση.</p><p class="note">Κόστος / κιλό: τα έξοδα της χρονιάς διά τα κιλά (λαδιού στις ελιές). «Χωρίς ζημιά από»: η τιμή πώλησης που καλύπτει τα έξοδα, αφού μετρήσει η επιδότηση και τα άλλα έσοδα.</p><p class="note">* Εκτίμηση επιδότησης από τις Ρυθμίσεις (στρέμματα × ποσό ανά στρέμμα). Το καθαρό κέρδος μετράει και την οικογενειακή εργασία ως κόστος· χωρίς αυτήν θα ήταν ${money(st.reduce((a,s)=>a+s.net+s.family,0))}.</p>`;
   el.insertAdjacentHTML('beforeend',sprayCardHtml(st)+vatHtml()+subTypesHtml(st)+elgaHtml()+budgetHtml()+acctHtml());bindBudget(el);
   labelCells(el);
 }
@@ -1262,7 +1267,8 @@ function syncEntryForm(resetSeason){
     if(!inH){const t=tasks.find(x=>!HARVEST.has(x)&&!MILL.has(x)&&!/^Μεταφορά/.test(x));if(t)$('#eTask').value=t}}
   syncTask();
   const iv=$('#iKind').value;const kinds=INCOME.filter(i=>!i.crop||i.crop===f.crop||(i.crop==='*'&&cropCls(f.crop)==='other'));$('#iKind').innerHTML=kinds.map(i=>`<option value="${i.id}">${i.name}</option>`).join('');if(kinds.some(k=>k.id===iv))$('#iKind').value=iv;syncIncome();
-  $('#eKgOilWrap').hidden=f.crop!=='olive';refreshLineCats();
+  // Olives: oil is known only at the mill, so the harvest day asks only the fruit, as an estimate (an old entry with oil keeps its field).
+  const ol=f.crop==='olive';$('#eKgOilWrap').hidden=!ol||!(editing&&num(editing.kgOil));$('#eKgFruitTxt').textContent=ol?'Κιλά καρπού (περίπου)':'Κιλά καρπού';$('#eKgNote').hidden=!ol;refreshLineCats();
 }
 const allowedCats=()=>$('#eField').value===FARM?CATS:CATS.filter(c=>!c.farmOnly);
 const defaultLine=()=>({cat:$('#eField').value===FARM?'diesel':'labor'});
@@ -1708,7 +1714,7 @@ async function exportXlsx(){if(typeof XLSX==='undefined'){toast('Η βιβλιο
   const wb=XLSX.utils.book_new();const fname=id=>id===FARM?'Όλο το κτήμα (κατανομή ανά στρέμμα)':S.fields.get(id)?.name||'';
   const rep=stats().sort((a,b)=>b.season-a.season).map(s=>{const f=S.fields.get(s.fieldId);const r={'Χρονιά':seasonName(s.season,f.crop),'Αγροτεμάχιο':f.name,'Καλλιέργεια':CROPS[f.crop].name,'Στρέμματα':s.stremmata,'Δέντρα / κλήματα':num(f.plants),'Κατάσταση':s.closed?'Ολοκληρώθηκε':'Σε εξέλιξη',
     'Έξοδα (€)':round2(s.cost),'Κοινά έξοδα, μερίδιο (€)':round2(s.shared),'Οικογενειακή εργασία (€)':round2(s.family),'Πωλήσεις (€)':round2(s.sales),'Άλλα έσοδα (€)':round2(s.otherInc),'Επιδότηση (€)':round2(s.subsidy),'Επιδότηση εκτίμηση;':s.subsidyIsEst?'Ναι':'Όχι','Εκτίμηση επιδότησης (€)':round2(s.subsidyPart||s.subsidyEst),'Καθαρό κέρδος (€)':round2(s.net),
-    'Κέρδος / στρέμμα (€)':s.perStr!=null?round2(s.perStr):'','Κέρδος / δέντρο ή κλήμα (€)':s.perPlant!=null?round2(s.perPlant):'','Κόστος / κιλό (€)':s.costPerKg!=null?Math.round(s.costPerKg*1000)/1000:'','Τιμή χωρίς ζημιά (€/κιλό)':s.breakEven!=null?Math.round(s.breakEven*1000)/1000:'','Κιλά καρπού':s.kgFruit,'Κιλά λαδιού':s.kgOil,'Κράτηση ελαιουργείου (κιλά)':s.millKept,'Για το σπίτι (κιλά)':s.home,'Σε φύλαξη (κιλά)':s.stored,'Λάδι που πουλήθηκε (κιλά)':s.oilSoldKg,'Μέση τιμή λαδιού (€/κιλό)':s.oilAvg!=null?Math.round(s.oilAvg*1000)/1000:'','Απόθεμα λαδιού (κιλά)':s.oilStock};
+    'Κέρδος / στρέμμα (€)':s.perStr!=null?round2(s.perStr):'','Κέρδος / δέντρο ή κλήμα (€)':s.perPlant!=null?round2(s.perPlant):'','Κόστος / κιλό (€)':s.costPerKg!=null?Math.round(s.costPerKg*1000)/1000:'','Τιμή χωρίς ζημιά (€/κιλό)':s.breakEven!=null?Math.round(s.breakEven*1000)/1000:'','Κιλά καρπού':s.kgFruit,'Κιλά λαδιού':s.kgOil,'Κιλά από':f.crop!=='olive'?'':(s.mFruit||s.mOil)?'Άλεση':(s.kgFruit||s.kgOil)?'Συγκομιδή (περίπου)':'','Κράτηση ελαιουργείου (κιλά)':s.millKept,'Για το σπίτι (κιλά)':s.home,'Σε φύλαξη (κιλά)':s.stored,'Λάδι που πουλήθηκε (κιλά)':s.oilSoldKg,'Μέση τιμή λαδιού (€/κιλό)':s.oilAvg!=null?Math.round(s.oilAvg*1000)/1000:'','Απόθεμα λαδιού (κιλά)':s.oilStock};
     for(const c of CATS)r[c.name+' (€)']=round2(s.byCat[c.id]||0);return r});
   const work=[],inc=[];for(const e of entriesSorted()){if(!S.fields.has(e.fieldId)&&e.kind!=='farm')continue;
     if(e.kind!=='income'){const ls=e.lines?.length?e.lines:[{}];for(const l of ls)work.push({'Ημερομηνία':xDate(e.date),'Αγροτεμάχιο':e.kind==='farm'?`Κοινό έξοδο · ${SCOPES[e.scope]||SCOPES.all}`:fname(e.fieldId),'Χρονιά':e.kind==='farm'?'':xSeason(e.fieldId,e.season),'Εργασία':e.task,'Κατηγορία':CAT[l.cat]?.name||'','Ποσότητα':l.qty||'','Μονάδα':CAT[l.cat]?.unit||'','Τιμή (€)':l.price||'','Ποσό (€)':l.amount||0,'Εργάτης / μηχάνημα':l.worker||(l.machine?S.extra.get(l.machine)?.name||'':''),'Απλήρωτο':e.unpaid?'Ναι':'','Σε ποιον':e.party||'','Κιλά καρπού':e.kgFruit||'','Κιλά λαδιού':e.kgOil||'','Κράτηση ελαιουργείου (κιλά)':e.millKeptKg||'','Για το σπίτι (κιλά)':e.homeKg||'','Σε φύλαξη (κιλά)':MILL.has(e.task)?e.storedKg||0:'','Τέλος συγκομιδής':e.harvestDone?'Ναι':'','Σημείωση':e.note||''})}
@@ -1755,7 +1761,7 @@ async function exportPdf(){
     for(const s of st.filter(x=>x.fieldId===f.id)){
       if(y>200){doc.addPage('a4','portrait');y=18} // a year's summary is not split across pages
       doc.setFont('DV','bold');doc.setFontSize(12);doc.text(`Χρονιά ${seasonName(s.season,f.crop)} · ${s.closed?'Ολοκληρώθηκε':'Σε εξέλιξη'}`,14,y+4);doc.setFont('DV','normal');
-      const prod=f.crop==='olive'?`${nf.format(s.kgFruit)} κιλά καρπού · ${nf.format(s.kgOil)} κιλά λαδιού${s.kgFruit&&s.kgOil?` (απόδοση ${nf.format(s.kgOil/s.kgFruit*100)}%)`:''}${s.millKept||s.home||s.stored?` · κράτηση ${nf.format(s.millKept)} · σπίτι ${nf.format(s.home)} · φύλαξη ${nf.format(s.stored)} κιλά · πουλήθηκαν ${nf.format(s.oilSoldKg)}${s.oilAvg?` (${eur2.format(s.oilAvg)}/κ.)`:''} · απόθεμα ${nf.format(s.oilStock)} κιλά`:''}`:`${nf.format(s.kgFruit)} κιλά ${f.crop==='vine'?'σταφυλιών':'παραγωγής'}`;
+      const prod=f.crop==='olive'?`${kgf(s.kgFruit,s.fruitEst)} κιλά καρπού${s.fruitEst?' (εκτίμηση συγκομιδής)':''} · ${kgf(s.kgOil,s.oilEst)} κιλά λαδιού${s.kgFruit&&s.kgOil?` (απόδοση ${nf.format(s.kgOil/s.kgFruit*100)}%)`:''}${s.millKept||s.home||s.stored?` · κράτηση ${nf.format(s.millKept)} · σπίτι ${nf.format(s.home)} · φύλαξη ${nf.format(s.stored)} κιλά · πουλήθηκαν ${nf.format(s.oilSoldKg)}${s.oilAvg?` (${eur2.format(s.oilAvg)}/κ.)`:''} · απόθεμα ${nf.format(s.oilStock)} κιλά`:''}`:`${nf.format(s.kgFruit)} κιλά ${f.crop==='vine'?'σταφυλιών':'παραγωγής'}`;
       T({startY:y+7,theme:'plain',styles:{font:'DV',fontSize:9.5,cellPadding:1.4},columnStyles:{0:{cellWidth:72},1:{halign:'right'}},tableWidth:120,
         body:[['Έξοδα',pm(s.cost)],['εκ των οποίων οικογενειακή εργασία',pm(s.family)],...(s.shared?[['εκ των οποίων κοινά έξοδα (μερίδιο)',pm(s.shared)]]:[]),['Πωλήσεις και άλλα έσοδα',pm(s.sales+s.otherInc)],['Επιδότηση'+(s.subsidyIsEst?' (εκτίμηση)':s.subsidyPart?' (μέχρι τώρα, εκτίμηση '+pm(s.subsidyPart)+')':''),pm(s.subsidy)],
           [{content:'Καθαρό κέρδος',styles:{fontStyle:'bold'}},{content:pm(s.net),styles:{fontStyle:'bold',textColor:s.net<0?[171,54,40]:[42,116,67]}}],
